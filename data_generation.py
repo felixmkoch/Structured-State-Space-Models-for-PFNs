@@ -13,11 +13,11 @@ from pathlib import Path
 import numpy as np
 
 import matplotlib.pyplot as plt
-from scripts.model_builder import get_model, save_model
-from scripts.model_configs import *
+from tabpfn.scripts.model_builder import get_model, save_model
+from tabpfn.scripts.model_configs import *
 
-from priors.utils import plot_features
-from priors.utils import uniform_int_sampler_f
+from tabpfn.priors.utils import plot_features
+from tabpfn.priors.utils import uniform_int_sampler_f
 
 
 
