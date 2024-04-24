@@ -1,11 +1,13 @@
 #
 # Imports
 #
+import os
+print(f"currently in {os.getcwd()}")
 import time
 from datetime import datetime
 
 import torch
-import os
+
 from pathlib import Path
 
 import numpy as np
