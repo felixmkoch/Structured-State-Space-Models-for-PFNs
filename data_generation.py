@@ -152,7 +152,7 @@ config_sample['batch_size'] = 4
 model = get_model(config_sample, device, should_train=False, verbose=2) # , state_dict=model[2].state_dict()
 (hp_embedding, data, _), targets, single_eval_pos = next(iter(model[3]))
 
-from utils import normalize_data
+from tabpfn.utils import normalize_data
 fig = plt.figure(figsize=(8, 8))
 N = 100
 plot_features(data[0:N, 0, 0:4], targets[0:N, 0], fig=fig)
