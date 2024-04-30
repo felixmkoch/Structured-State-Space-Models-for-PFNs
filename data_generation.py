@@ -144,6 +144,26 @@ config['train_mixed_precision'] = True
 config['efficient_eval_masking'] = True
 config_sample = evaluate_hypers(config)
 
+#
+# Export Config as a JSON
+#
+print("Exporting Config as a JSON")
+import json
+# Define a custom JSON encoder to handle non-serializable types
+class CustomEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if callable(obj):  # Check if object is a function
+                return None  # Skip functions
+        return json.JSONEncoder.default(self, obj)
+
+# Convert dictionary to JSON
+json_str = json.dumps(config_sample, cls=CustomEncoder)
+
+with open('config.json', 'w') as json_file:
+    json_file.write(json_str)
+
+# Print the JSON string
+print(json_str)
 
 #
 # Get the Model
