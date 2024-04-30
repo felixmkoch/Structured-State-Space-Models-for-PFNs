@@ -155,7 +155,8 @@ model = get_model(config_sample, device, should_train=False, verbose=2) # , stat
 from tabpfn.utils import normalize_data
 fig = plt.figure(figsize=(8, 8))
 N = 100
-plot_features(data[0:N, 0, 0:4], targets[0:N, 0], fig=fig)
+# Comment out because it doesn't work in docker container yet.
+# plot_features(data[0:N, 0, 0:4], targets[0:N, 0], fig=fig)
 
 # What the data looks like
 print(f"# Data Entries: {len(data)}")
