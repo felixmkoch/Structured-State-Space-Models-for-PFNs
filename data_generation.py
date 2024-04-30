@@ -165,6 +165,15 @@ with open('config.json', 'w') as json_file:
 # Print the JSON string
 print(json_str)
 
+print("########### See what values are functions ###########")
+for key, value in config_sample.items():
+    if callable(value):  # If the value is a function
+        print(f"Key: {key}; Value: {value}")
+
+print("#############Those values were functions ################")
+
+
+
 #
 # Get the Model
 #
