@@ -159,8 +159,9 @@ class CustomEncoder(json.JSONEncoder):
 # Convert dictionary to JSON
 json_str = json.dumps(config_sample, cls=CustomEncoder)
 
-with open('config.json', 'w') as json_file:
-    json_file.write(json_str)
+# Comment out writing config into file
+#with open('config.json', 'w') as json_file:
+#    json_file.write(json_str)
 
 # Print the JSON string
 print(json_str)
