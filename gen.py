@@ -78,7 +78,7 @@ config['batch_size'] = 4 # just because we did this in the other config. Would b
 #------------------------------------------------------------------------------------------------
 
 # Get the model 
-model = get_model_mamba(config, device, should_train=False, verbose=2) # , state_dict=model[2].state_dict()
+model = get_model_mamba(config, device, should_train=True, verbose=2) # , state_dict=model[2].state_dict()
 
 (hp_embedding, data, _), targets, single_eval_pos = next(iter(model[3]))
 

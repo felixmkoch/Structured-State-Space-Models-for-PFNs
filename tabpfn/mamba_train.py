@@ -96,24 +96,28 @@ def train(priordataloader_class,
             return single_eval_pos, single_eval_pos + bptt_extra_samples
         else:
             return single_eval_pos, bptt
-    dl = priordataloader_class(num_steps=steps_per_epoch, batch_size=batch_size, eval_pos_seq_len_sampler=eval_pos_seq_len_sampler, seq_len_maximum=bptt+(bptt_extra_samples if bptt_extra_samples else 0), device=device, **extra_prior_kwargs_dict)
+    
+    #
+    # DataLoader Initialization
+    #
+    dl = priordataloader_class(
+        num_steps=steps_per_epoch, 
+        batch_size=batch_size, 
+        eval_pos_seq_len_sampler=eval_pos_seq_len_sampler, 
+        seq_len_maximum=bptt+(bptt_extra_samples if bptt_extra_samples else 0), 
+        device=device, 
+        **extra_prior_kwargs_dict
+    )
 
+    # Encoder
     encoder = encoder_generator(dl.num_features, emsize)
-    #style_def = dl.get_test_batch()[0][0] # the style in batch of the form ((style, x, y), target, single_eval_pos)
-    style_def = None
-    #print(f'Style definition of first 3 examples: {style_def[:3] if style_def is not None else None}')
-    style_encoder = style_encoder_generator(style_def.shape[1], emsize) if (style_def is not None) else None
-    if isinstance(criterion, nn.GaussianNLLLoss):
-        n_out = 2
-    elif isinstance(criterion, nn.CrossEntropyLoss):
-        n_out = criterion.weight.shape[0]
-    else:
-        n_out = 1
+    if isinstance(criterion, nn.GaussianNLLLoss): n_out = 2
+    elif isinstance(criterion, nn.CrossEntropyLoss): n_out = criterion.weight.shape[0]
+    else: n_out = 1
 
     #
     # Transformer Model
     #
-    
     model = TransformerModel(encoder, 
                              n_out, 
                              emsize, 
@@ -121,7 +125,7 @@ def train(priordataloader_class,
                              nhid, 
                              nlayers, 
                              dropout, 
-                             style_encoder=style_encoder,
+                             style_encoder=None,
                              y_encoder=y_encoder_generator(1, emsize), 
                              input_normalization=input_normalization,
                              pos_encoder=(pos_encoder_generator or positional_encodings.NoPositionalEncoding)(emsize, bptt*2),
@@ -181,7 +185,24 @@ def train(priordataloader_class,
         ignore_steps = 0
         before_get_batch = time.time()
         assert len(dl) % aggregate_k_gradients == 0, 'Please set the number of steps per epoch s.t. `aggregate_k_gradients` divides it.'
+        
+        # Batch [int] is just a counter from 0 to num_batches.
+        # Data [tuple] Tuple None, Training_Data.
+        # Targets [Tensor] is a tensor of 1. and 0..
+        # Single_eval_pos idk what this does.
+        
         for batch, (data, targets, single_eval_pos) in enumerate(dl):
+            
+            print(f"Batch type: {type(batch)}")
+            print(f"Batch Value: {batch}")
+            print(f"Data type: {type(data)}")
+            print(f"Data Value: {data}")
+            print(f"Targets type: {type(targets)}")
+            print(f"Targets Value: {targets}")
+            print(f"Single_eval_pos type: {type(single_eval_pos)}")
+            print(f"Single_eval_pos Value: {single_eval_pos}")
+            
+            
             if using_dist and not (batch % aggregate_k_gradients == aggregate_k_gradients - 1):
                 cm = model.no_sync()
             else:
@@ -263,11 +284,20 @@ def train(priordataloader_class,
     #
     # END Train Function
     #
+    
+    #
+    # Training Process
+    #
+    
+    print("BEGIN TRAINIG PROCESS")
+    print(f"NUM EPOCHS: {epochs}")
 
     total_loss = float('inf')
     total_positional_losses = float('inf')
     try:
         for epoch in (range(1, epochs + 1) if epochs is not None else itertools.count(1)):
+            
+            print("----------------- EPOCH START ---------------------")
 
             epoch_start_time = time.time()
             total_loss, total_positional_losses, time_to_get_batch, forward_time, step_time, nan_share, ignore_share =\
@@ -288,6 +318,8 @@ def train(priordataloader_class,
                     f' nan share {nan_share:5.2f} ignore share (for classification tasks) {ignore_share:5.4f}'
                     + (f'val score {val_score}' if val_score is not None else ''))
                 print('-' * 89)
+                
+            print("------------------ EPOCH END ----------------------")
 
             # stepping with wallclock time based scheduler
             if epoch_callback is not None and rank == 0:
@@ -295,6 +327,10 @@ def train(priordataloader_class,
             scheduler.step()
     except KeyboardInterrupt:
         pass
+    
+    #
+    # END Training Process
+    #
     
     return total_loss, total_positional_losses, model.to('cpu'), dl
     
