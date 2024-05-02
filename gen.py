@@ -1,6 +1,6 @@
-#
-# Imports
-#
+#------------------------------------------------------------------------------------------------
+#                                        IMPORTS
+#------------------------------------------------------------------------------------------------
 import os
 print(f"currently in {os.getcwd()}")
 import time
@@ -15,21 +15,24 @@ import numpy as np
 
 import matplotlib.pyplot as plt
 from tabpfn.scripts.model_builder import get_model, save_model
+from tabpfn.scripts.model_builder_mamba import get_model_mamba 
 from tabpfn.scripts.model_configs import *
 
 from tabpfn.priors.utils import plot_features
 from tabpfn.priors.utils import uniform_int_sampler_f
 
-#
-# Mandatory Parameter
-#
+#------------------------------------------------------------------------------------------------
+#                                       END IMPORTS
+#------------------------------------------------------------------------------------------------
 
+#------------------------------------------------------------------------------------------------
+#                                        PARAMETER
+#------------------------------------------------------------------------------------------------
+
+# Mandatory Parameter
 device = 'cpu'
 
-#
 # Other Parameters
-#
-
 maximum_runtime = 10000
 base_path = '.'
 max_features = 100
@@ -38,12 +41,16 @@ max_samples = 10000 if large_datasets else 5000
 bptt = 10000 if large_datasets else 3000
 suite='cc'
 
-
-#
-# CONFIG
-#
-
+# Others
 json_file_path = "config.json"
+
+#------------------------------------------------------------------------------------------------
+#                                      END PARAMETER
+#------------------------------------------------------------------------------------------------
+
+#------------------------------------------------------------------------------------------------
+#                                         CONFIG
+#------------------------------------------------------------------------------------------------
 
 with open(json_file_path, "r") as f:
     config = json.load(f)
@@ -62,17 +69,28 @@ config["num_features_used"] = uniform_int_sampler_f(1, max_features)
 
 config['batch_size'] = 4 # just because we did this in the other config. Would be 64 default
 
+#------------------------------------------------------------------------------------------------
+#                                         END CONFIG
+#------------------------------------------------------------------------------------------------
 
+#------------------------------------------------------------------------------------------------
+#                                           MODEL
+#------------------------------------------------------------------------------------------------
 
+# Get the model 
+model = get_model_mamba(config, device, should_train=False, verbose=2) # , state_dict=model[2].state_dict()
 
-
-
-
-
-
-
-model = get_model(config, device, should_train=False, verbose=2) # , state_dict=model[2].state_dict()
 (hp_embedding, data, _), targets, single_eval_pos = next(iter(model[3]))
+
+
+#------------------------------------------------------------------------------------------------
+#                                         END MODEL
+#------------------------------------------------------------------------------------------------
+
+#------------------------------------------------------------------------------------------------
+#                                         VISUALIZE
+#------------------------------------------------------------------------------------------------
+
 
 from tabpfn.utils import normalize_data
 fig = plt.figure(figsize=(8, 8))
@@ -86,17 +104,16 @@ print(f"Type of the  Target Entries: {type(data)}")
 print(f"Torch Data Entries look like: ")
 print(data[:50])
 
-
-
-
 d = np.concatenate([data[:, 0, :].T, np.expand_dims(targets[:, 0], -1).T])
 d[np.isnan(d)] = 0
 c = np.corrcoef(d)
 plt.matshow(np.abs(c), vmin=0, vmax=1)
 plt.show()
 
+#------------------------------------------------------------------------------------------------
+#                                       END VISUALIZE
+#------------------------------------------------------------------------------------------------
 
 
 
-
-print("worls")
+print("works")
