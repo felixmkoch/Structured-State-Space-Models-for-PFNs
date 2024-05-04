@@ -67,7 +67,7 @@ config["differentiable_hyperparameters"]["prior_mlp_activations"]["choice_values
 config["num_classes"] = uniform_int_sampler_f(2, config['max_num_classes']) # Wrong Function
 config["num_features_used"] = uniform_int_sampler_f(1, max_features)
 
-config['batch_size'] = 4 # just because we did this in the other config. Would be 64 default
+config['batch_size'] = 64 # just because we did this in the other config. Would be 64 default
 
 #------------------------------------------------------------------------------------------------
 #                                         END CONFIG
