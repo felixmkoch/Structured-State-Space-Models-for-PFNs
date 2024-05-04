@@ -30,7 +30,7 @@ from tabpfn.priors.utils import uniform_int_sampler_f
 #------------------------------------------------------------------------------------------------
 
 # Mandatory Parameter
-device = 'cpu'
+device = "cuda" if torch.cuda.is_available() else "cpu"
 
 # Other Parameters
 maximum_runtime = 10000
