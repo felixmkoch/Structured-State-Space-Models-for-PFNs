@@ -187,20 +187,21 @@ def train(priordataloader_class,
         assert len(dl) % aggregate_k_gradients == 0, 'Please set the number of steps per epoch s.t. `aggregate_k_gradients` divides it.'
         
         # Batch [int] is just a counter from 0 to num_batches.
-        # Data [tuple] Tuple None, Training_Data.
-        # Targets [Tensor] is a tensor of 1. and 0..
+        # Data [tuple] Of length 3 [BPTT, batch_size/aggregate_k_gradients, num_features] [BPTT, batch_size/aggregate_k_gradients]
+        # Targets [Tensor] is a tensor of 1. and 0.. [BPTT, batch_size/aggregate_k_gradients]
+        # Note: Targets and Data[3] seem to be the same.
         # Single_eval_pos idk what this does.
         
         for batch, (data, targets, single_eval_pos) in enumerate(dl):
             
-            print(f"Batch type: {type(batch)}")
-            print(f"Batch Value: {batch}")
-            print(f"Data type: {type(data)}")
-            print(f"Data Value: {data}")
-            print(f"Targets type: {type(targets)}")
-            print(f"Targets Value: {targets}")
-            print(f"Single_eval_pos type: {type(single_eval_pos)}")
-            print(f"Single_eval_pos Value: {single_eval_pos}")
+            #print(f"Data type: {type(data)}")
+            #print(f"Len of data tuple: {len(data)}")
+            #print(f"Shape of data: {data[1].size()} and {data[2].size()}")
+            #print(f"Data Value: {data}")
+            #print(f"Targets Value: {targets}")
+            #print(f"Shape of target: {targets.size()}")
+
+            print(f"Currently in batch {batch + 1} out of {len(dl)} batches")
             
             
             if using_dist and not (batch % aggregate_k_gradients == aggregate_k_gradients - 1):

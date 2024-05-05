@@ -187,8 +187,16 @@ def get_meta_gp_prior_hyperparameters(config):
 
     return config
 
+#------------------------------------------------------------------------------------------------
+#                                    MAMBA MODEL GETTER
+#------------------------------------------------------------------------------------------------
 
 def get_model_mamba(config, device, should_train=True, verbose=False, state_dict=None, epoch_callback=None):
+
+    #------------------------------------------------------------------------------------------------
+    #                                    CONFIG STUFF
+    #------------------------------------------------------------------------------------------------
+
     import tabpfn.priors as priors
     from tabpfn.train import train, Losses
     from tabpfn.mamba_train import train
@@ -202,6 +210,10 @@ def get_model_mamba(config, device, should_train=True, verbose=False, state_dict
     config['num_steps'] = math.ceil(config['num_steps'] * config['aggregate_k_gradients'])
     config['batch_size'] = math.ceil(config['batch_size'] / config['aggregate_k_gradients'])
     config['recompute_attn'] = config['recompute_attn'] if 'recompute_attn' in config else False
+
+    #
+    # Function to make new Batches
+    #
 
     def make_get_batch(model_proto, **extra_kwargs):
         def new_get_batch(batch_size, seq_len, num_features, hyperparameters
@@ -284,11 +296,14 @@ def get_model_mamba(config, device, should_train=True, verbose=False, state_dict
     config['eval_positions'] = [int(config['bptt'] * 0.95)] if config['bptt_extra_samples'] is None else [int(config['bptt'])]
 
     epochs = 0 if not should_train else config['epochs']
-    #print('MODEL BUILDER', model_proto, extra_kwargs['get_batch'])
+
+    #------------------------------------------------------------------------------------------------
+    #                                     END CONFIG STUFF
+    #------------------------------------------------------------------------------------------------
     
-#------------------------------------------------------------------------------------------------
-#                                    TRANSFORMER TRAIN
-#------------------------------------------------------------------------------------------------
+    #------------------------------------------------------------------------------------------------
+    #                                    TRANSFORMER TRAIN
+    #------------------------------------------------------------------------------------------------
 
     model = train(model_proto.DataLoader
                   , loss
@@ -326,8 +341,8 @@ def get_model_mamba(config, device, should_train=True, verbose=False, state_dict
                   , verbose=verbose_train,
                   weight_decay=config.get('weight_decay', 0.0))
     
-#------------------------------------------------------------------------------------------------
-#                                  END TRANSFORMER TRAIN
-#------------------------------------------------------------------------------------------------
+    #------------------------------------------------------------------------------------------------
+    #                                  END TRANSFORMER TRAIN
+    #------------------------------------------------------------------------------------------------
 
     return model

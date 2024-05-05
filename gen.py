@@ -78,7 +78,7 @@ config['batch_size'] = 64 # just because we did this in the other config. Would 
 #------------------------------------------------------------------------------------------------
 
 # Get the model 
-model = get_model_mamba(config, device, should_train=True, verbose=2) # , state_dict=model[2].state_dict()
+model = get_model_mamba(config, device, should_train=True, verbose=0) # , state_dict=model[2].state_dict()
 
 (hp_embedding, data, _), targets, single_eval_pos = next(iter(model[3]))
 
@@ -103,6 +103,10 @@ print(f"Type of the  Target Entries: {type(data)}")
 
 print(f"Torch Data Entries look like: ")
 print(data[:50])
+
+# Back Transformation
+data = data.to("cpu")
+targets = targets.to("cpu")
 
 d = np.concatenate([data[:, 0, :].T, np.expand_dims(targets[:, 0], -1).T])
 d[np.isnan(d)] = 0
