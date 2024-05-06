@@ -16,6 +16,7 @@ from torch import nn
 
 import tabpfn.utils as utils
 from tabpfn.transformer import TransformerModel
+from mamba import MambaModel
 from tabpfn.utils import get_cosine_schedule_with_warmup, get_openai_lr, StoreDictKeyPair, get_weighted_single_eval_pos_sampler, get_uniform_single_eval_pos_sampler
 import tabpfn.priors as priors
 import tabpfn.encoders as encoders
@@ -142,6 +143,8 @@ def train(priordataloader_class,
     #
     # MAMBA Model
     #
+
+    # mamba_model = MambaModel()
     
     
     
