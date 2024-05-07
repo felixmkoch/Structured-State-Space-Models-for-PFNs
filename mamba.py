@@ -68,28 +68,31 @@ def _init_weights(
                     p /= math.sqrt(n_residuals_per_layer * n_layer)
 
 
-class MambaModel(nn.Module):
+class MambaBackbone(nn.Module):
     '''
-    Actual full MAMBA Model used.
+    Backbone blocks of the MAMBA Model.
     '''
 
     def __init__(self,
-                 d_model: int,
-                 num_layers: int = 1,
-                 ssm_config = None,
-                 norm_epsilon: float = 1e-5,
-                 rms_norm: bool = False,
-                 initializer_config = None,
-                 fused_add_norm = False,
-                 residual_in_fp32 = False,
-                 device = "cpu",
-                 dtype=None
-                 ) -> None:
-
-        super().__init__()
-        self.model_type = 'mamba-ssm'
-
+                d_model: int,
+                num_layers: int,
+                input_len: int,
+                ssm_config=None,
+                norm_epsilon: float = 1e-5,
+                rms_norm: bool = False,
+                initializer_cfg=None,
+                fused_add_norm=False,
+                residual_in_fp32=False,
+                device=None,
+                dtype=None,
+                 ):
+        
         factory_kwargs = {"device": device, "dtype": dtype}
+        super().__init__()
+        self.residual_in_fp32 = residual_in_fp32
+        self.fused_add_norm = fused_add_norm
+
+        nn.Linear(d_model, input_len, bias=False, **factory_kwargs)
 
         self.blocks = nn.ModuleList(
             [
@@ -115,6 +118,91 @@ class MambaModel(nn.Module):
             partial(
                 _init_weights,
                 n_layer=num_layers,
+                **(initializer_cfg if initializer_cfg is not None else {}),
+            )
+        )
+
+
+    def forward(self,
+                input,
+                inference_parameters
+                ):
+            
+        print(f"Input Tensor before the Input layer: {input.size()}")
+
+        hidden_states = self.input_layer(input)
+        residual = None
+
+        print(f"Hidden States before the mamba blocks: {hidden_states.size()}")
+
+        for block in self.blocks: hidden_states, residual = block(hidden_states, residual, inference_parameters=inference_parameters)
+
+        print(f"Hidden States after MAMBA Blocks: {hidden_states.size()}")
+
+        return hidden_states
+
+
+
+
+class MambaModel(nn.Module):
+    '''
+    Actual full MAMBA Model used.
+    '''
+
+    def __init__(self,
+                 d_model: int,
+                 num_layers: int = 1,
+                 input_len = 15,
+                 ssm_config = None,
+                 norm_epsilon: float = 1e-5,
+                 rms_norm: bool = False,
+                 initializer_config = None,
+                 fused_add_norm = False,
+                 residual_in_fp32 = False,
+                 device = "cpu",
+                 dtype=None
+                 ) -> None:
+
+        super().__init__()
+        self.model_type = 'mamba-ssm'
+
+        self.d_model = d_model
+        self.num_layers = num_layers
+        self.device = device
+        self.dtype = dtype
+        self.input_len = input_len
+        self.ssm_config = ssm_config
+        self.rms_norm = rms_norm
+        self.initializer_config = initializer_config
+        self.residual_in_fp32 = residual_in_fp32
+        self.fused_add_norm = fused_add_norm
+
+        factory_kwargs = {"device": device, "dtype": dtype}
+
+        self.mamba_backbone = MambaBackbone(
+            d_model = self.d_model,
+            num_layers=self.num_layers,
+            input_len=self.input_len,
+            ssm_config=self.ssm_config,
+            norm_epsilon=1e-5,
+            rms_norm=False,
+            initializer_cfg=self.initializer_config,
+            fused_add_norm=self.fused_add_norm,
+            residual_in_fp32=self.residual_in_fp32,
+            device=self.device,
+            dtype=self.dtype
+        )
+
+        self.output_layer = nn.Linear(d_model, 1, bias=False, **factory_kwargs) # Only want 1 Output, either 0 or 1.
+
+        self.norm_f = (nn.LayerNorm if not rms_norm else RMSNorm)(
+            d_model, eps=norm_epsilon, **factory_kwargs
+        )
+
+        self.apply(
+            partial(
+                _init_weights,
+                n_layer=num_layers,
                 **(initializer_config if initializer_config is not None else {}),
             )
         )
@@ -128,10 +216,9 @@ class MambaModel(nn.Module):
 
         style_src, x_src, y_src = src               # Split input into style, train (x) and test (y) part.
 
+        hidden_states = self.mamba_backbone(x_src, inference_parameters=None)
+
+        output_val = self.output_layer(hidden_states)
 
 
-
-
-        
-
-        pass
+        print(f"Output of the Mamba Model is: {output_val}")
