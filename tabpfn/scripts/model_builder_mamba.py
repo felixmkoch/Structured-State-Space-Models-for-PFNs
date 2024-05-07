@@ -199,7 +199,7 @@ def get_model_mamba(config, device, should_train=True, verbose=False, state_dict
 
     import tabpfn.priors as priors
     from tabpfn.train import train, Losses
-    from tabpfn.mamba_train import train
+    from tabpfn.mamba_train import train_mamba
     extra_kwargs = {}
     verbose_train, verbose_prior = verbose >= 1, verbose >= 2
     config['verbose'] = verbose_prior
@@ -304,7 +304,7 @@ def get_model_mamba(config, device, should_train=True, verbose=False, state_dict
     #------------------------------------------------------------------------------------------------
     #                                    TRANSFORMER TRAIN
     #------------------------------------------------------------------------------------------------
-
+    '''
     model = train(model_proto.DataLoader
                   , loss
                   , encoder
@@ -340,9 +340,54 @@ def get_model_mamba(config, device, should_train=True, verbose=False, state_dict
                   , lr=config['lr']
                   , verbose=verbose_train,
                   weight_decay=config.get('weight_decay', 0.0))
-    
+    '''
     #------------------------------------------------------------------------------------------------
     #                                  END TRANSFORMER TRAIN
     #------------------------------------------------------------------------------------------------
 
-    return model
+    #------------------------------------------------------------------------------------------------
+    #                                      MAMBA TRAIN
+    #------------------------------------------------------------------------------------------------
+
+    model_mamba = train_mamba(model_proto.DataLoader
+                  , loss
+                  , encoder
+                  , style_encoder_generator = encoders.StyleEncoder if use_style else None
+                  , emsize=config['emsize']
+                  , nhead=config['nhead']
+                  # For unsupervised learning change to NanHandlingEncoder
+                  , y_encoder_generator= encoders.get_Canonical(config['max_num_classes']) if config.get('canonical_y_encoder', False) else encoders.Linear
+                  , pos_encoder_generator=None
+                  , batch_size=config['batch_size']
+                  , nlayers=config['nlayers']
+                  , nhid=config['emsize'] * config['nhid_factor']
+                  , epochs=epochs
+                  , warmup_epochs=20
+                  , bptt=config['bptt']
+                  , gpu_device=device
+                  , dropout=config['dropout']
+                  , steps_per_epoch=config['num_steps']
+                  , single_eval_pos_gen=get_uniform_single_eval_pos_sampler(config.get('max_eval_pos', config['bptt']), min_len=config.get('min_eval_pos', 0))
+                  , load_weights_from_this_state_dict=state_dict
+                  , aggregate_k_gradients=config['aggregate_k_gradients']
+                  , recompute_attn=config['recompute_attn']
+                  , epoch_callback=epoch_callback
+                  , bptt_extra_samples = config['bptt_extra_samples']
+                  , train_mixed_precision = config['train_mixed_precision']
+                  , extra_prior_kwargs_dict={
+                        'num_features': config['num_features']
+                        , 'hyperparameters': prior_hyperparameters
+                        #, 'dynamic_batch_size': 1 if ('num_global_att_tokens' in config and config['num_global_att_tokens']) else 2
+                        , 'batch_size_per_gp_sample': config.get('batch_size_per_gp_sample', None)
+                        , **extra_kwargs
+                    }
+                  , lr=config['lr']
+                  , verbose=verbose_train,
+                  weight_decay=config.get('weight_decay', 0.0)
+            )
+
+    #------------------------------------------------------------------------------------------------
+    #                                    END MAMBA TRAIN
+    #------------------------------------------------------------------------------------------------
+
+    return model_mamba

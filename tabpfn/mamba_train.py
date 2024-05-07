@@ -50,7 +50,7 @@ class Losses():
 #                                MAMBA TRAIN FUNCTION
 #------------------------------------------------------------------------------------------------
 
-def train(priordataloader_class, 
+def train_mamba(priordataloader_class, 
           criterion, 
           encoder_generator, 
           emsize=200, 
@@ -119,6 +119,7 @@ def train(priordataloader_class,
     #
     # Transformer Model
     #
+    '''
     model = TransformerModel(encoder, 
                              n_out, 
                              emsize, 
@@ -135,7 +136,7 @@ def train(priordataloader_class,
                              efficient_eval_masking=efficient_eval_masking, 
                              **model_extra_args
                              )
-    
+    '''
     #
     # END Transformer Model
     #
@@ -144,7 +145,18 @@ def train(priordataloader_class,
     # MAMBA Model
     #
 
-    # mamba_model = MambaModel()
+    print(f"BPTT is : {bptt} and aggregate_k_gradients is {aggregate_k_gradients}")
+
+    mamba_model_d = bptt * aggregate_k_gradients
+
+    mamba_model = MambaModel(
+        d_model=mamba_model_d,
+        num_layers=2,
+        input_len=dl.num_features,
+        device=device,
+    )
+
+    print("MAMBA Model worked so far.")
     
     
     
@@ -153,22 +165,22 @@ def train(priordataloader_class,
     #
     
     # Check if model should be loaded from state dict
-    model.criterion = criterion
+    mamba_model.criterion = criterion
 
-    print(f"Using a Transformer with {sum(p.numel() for p in model.parameters())/1000/1000:.{2}f} M parameters")
+    #print(f"Using a Transformer with {sum(p.numel() for p in model.parameters())/1000/1000:.{2}f} M parameters")
 
-    try:
-        for (k, v), (k2, v2) in zip(model.state_dict().items(), initialize_with_model.state_dict().items()):
-            print(k, ((v - v2) / v).abs().mean(), v.shape)
-    except Exception:
-        pass
+    #try:
+    #    for (k, v), (k2, v2) in zip(model.state_dict().items(), initialize_with_model.state_dict().items()):
+    #        print(k, ((v - v2) / v).abs().mean(), v.shape)
+    #except Exception:
+    #    pass
 
     # Specify whether model should be trained on CPU or GPU
-    model.to(device)
+    mamba_model.to(device)
     
     # Init Data Loader and Optimizer
-    dl.model = model
-    optimizer = torch.optim.AdamW(model.parameters(), lr=lr, weight_decay=weight_decay)
+    dl.model = mamba_model
+    optimizer = torch.optim.AdamW(mamba_model.parameters(), lr=lr, weight_decay=weight_decay)
     scheduler = scheduler(optimizer, warmup_epochs, epochs if epochs is not None else 100) # when training for fixed time lr schedule takes 100 steps
     scaler = GradScaler() if train_mixed_precision else None
 
@@ -180,7 +192,7 @@ def train(priordataloader_class,
     #
     
     def train_epoch():
-        model.train()  # Turn on the train mode
+        mamba_model.train()  # Turn on the train mode
         total_loss = 0.
         total_positional_losses = 0.
         total_positional_losses_recorded = 0
@@ -208,7 +220,7 @@ def train(priordataloader_class,
             
             
             if using_dist and not (batch % aggregate_k_gradients == aggregate_k_gradients - 1):
-                cm = model.no_sync()
+                cm = mamba_model.no_sync()
             else:
                 cm = nullcontext()
             with cm:
@@ -221,7 +233,7 @@ def train(priordataloader_class,
 
                 with autocast(enabled=scaler is not None):
                     # If style is set to None, it should not be transferred to device
-                    output = model(tuple(e.to(device) if torch.is_tensor(e) else e for e in data) if isinstance(data, tuple) else data.to(device)
+                    output = mamba_model(tuple(e.to(device) if torch.is_tensor(e) else e for e in data) if isinstance(data, tuple) else data.to(device)
                                    , single_eval_pos=single_eval_pos)
 
                     forward_time = time.time() - before_forward
@@ -250,7 +262,7 @@ def train(priordataloader_class,
 
                 if batch % aggregate_k_gradients == aggregate_k_gradients - 1:
                     if scaler: scaler.unscale_(optimizer)
-                    torch.nn.utils.clip_grad_norm_(model.parameters(), 1.)
+                    torch.nn.utils.clip_grad_norm_(mamba_model.parameters(), 1.)
                     try:
                         if scaler:
                             scaler.step(optimizer)
@@ -308,7 +320,7 @@ def train(priordataloader_class,
                 train_epoch()
             if hasattr(dl, 'validate') and epoch % validation_period == 0:
                 with torch.no_grad():
-                    val_score = dl.validate(model)
+                    val_score = dl.validate(mamba_model)
             else:
                 val_score = None
 
@@ -336,7 +348,7 @@ def train(priordataloader_class,
     # END Training Process
     #
     
-    return total_loss, total_positional_losses, model.to('cpu'), dl
+    return total_loss, total_positional_losses, mamba_model.to('cpu'), dl
     
     
 #------------------------------------------------------------------------------------------------

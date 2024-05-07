@@ -92,7 +92,10 @@ class MambaBackbone(nn.Module):
         self.residual_in_fp32 = residual_in_fp32
         self.fused_add_norm = fused_add_norm
 
-        nn.Linear(d_model, input_len, bias=False, **factory_kwargs)
+        print(f"Dimension of model is: {d_model}")
+        print(f"Input length is {input_len}")
+
+        self.input_layer = nn.Linear(input_len, d_model, bias=False, **factory_kwargs)
 
         self.blocks = nn.ModuleList(
             [
@@ -209,7 +212,8 @@ class MambaModel(nn.Module):
 
 
     def forward(self,
-                src: tuple  # Inputs (src) have to be given as (x,y) or (style,x,y) tuple'
+                src: tuple,  # Inputs (src) have to be given as (x,y) or (style,x,y) tuple'
+                single_eval_pos: int
                 ):
         
         if len(src) == 2: src = (None,) + src       # Check whether a style was given
