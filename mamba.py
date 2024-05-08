@@ -138,13 +138,43 @@ class MambaBackbone(nn.Module):
 
         print(f"Hidden States before the mamba blocks: {hidden_states.size()}")
 
-        for block in self.blocks: hidden_states, residual = block(hidden_states, residual, inference_parameters=inference_parameters)
+        for block in self.blocks: hidden_states, residual = block(hidden_states, residual, inference_params=inference_parameters)
 
         print(f"Hidden States after MAMBA Blocks: {hidden_states.size()}")
 
         return hidden_states
 
 
+
+class MambaModelSimple(nn.Module):
+    '''
+    Mamba model based on the Mamba Model from state-spaces.
+    '''
+
+    def __init__(self,
+                 model_dim: int,
+                 d_state: int,
+                 d_conv: int,
+                 expand: int,
+                 device: str = "cpu"
+                 ):
+        
+        print(f"Initialize Mambe model on {device} device.")
+        
+        mamba_model = Mamba(
+            d_model=model_dim,
+            d_state=d_state,
+            d_conv=d_conv,
+            expand=expand
+        )
+        
+        pass
+
+
+    def forward(self,
+                input_tensor
+                ):
+        pass
 
 
 class MambaModel(nn.Module):
