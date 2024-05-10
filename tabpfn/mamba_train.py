@@ -67,7 +67,6 @@ def train_mamba(priordataloader_class,
           warmup_epochs=10, 
           input_normalization=False,
           y_encoder_generator=None, 
-          pos_encoder_generator=None, 
           decoder=None, 
           extra_prior_kwargs_dict={}, 
           scheduler=get_cosine_schedule_with_warmup,
@@ -83,9 +82,9 @@ def train_mamba(priordataloader_class,
           initializer=None, 
           initialize_with_model=None, 
           train_mixed_precision=False, 
-          efficient_eval_masking=True, 
           **model_extra_args
           ):
+    
     device = gpu_device if torch.cuda.is_available() else 'cpu:0'
     print(f'Using {device} device')
     using_dist, rank, device = init_dist(device)
@@ -117,31 +116,6 @@ def train_mamba(priordataloader_class,
     else: n_out = 1
 
     #
-    # Transformer Model
-    #
-    '''
-    model = TransformerModel(encoder, 
-                             n_out, 
-                             emsize, 
-                             nhead, 
-                             nhid, 
-                             nlayers, 
-                             dropout, 
-                             style_encoder=None,
-                             y_encoder=y_encoder_generator(1, emsize), 
-                             input_normalization=input_normalization,
-                             pos_encoder=(pos_encoder_generator or positional_encodings.NoPositionalEncoding)(emsize, bptt*2),
-                             decoder=decoder, 
-                             init_method=initializer, 
-                             efficient_eval_masking=efficient_eval_masking, 
-                             **model_extra_args
-                             )
-    '''
-    #
-    # END Transformer Model
-    #
-    
-    #
     # MAMBA Model
     #
 
@@ -150,20 +124,14 @@ def train_mamba(priordataloader_class,
     mamba_model_d = bptt * aggregate_k_gradients
 
     mamba_model = MambaModel(
-        d_model=mamba_model_d,
         encoder=encoder,
         n_out=n_out,
         ninp=emsize,
         nhid=nhid,
         y_encoder=y_encoder_generator(1, emsize),
         num_layers=2,
-        input_len=dl.num_features,
         device=device,
     )
-
-    #print("MAMBA Model worked so far.")
-    
-    
     
     #
     # END MAMBA Model

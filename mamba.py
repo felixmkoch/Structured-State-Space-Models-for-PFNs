@@ -74,9 +74,8 @@ class MambaBackbone(nn.Module):
     '''
 
     def __init__(self,
-                d_model: int,
+                ninp: int,
                 num_layers: int,
-                input_len: int,
                 ssm_config=None,
                 norm_epsilon: float = 1e-5,
                 rms_norm: bool = False,
@@ -92,11 +91,11 @@ class MambaBackbone(nn.Module):
         self.residual_in_fp32 = residual_in_fp32
         self.fused_add_norm = fused_add_norm
 
-        print(f"Dimension of model is: {d_model}")
-        print(f"Input length is {input_len}")
+        # IMPORTANT TODO: d_model is just there for performance reasons because my GPU is small. In real applicaiton, use ninp.
+        d_model=32
 
         # Just to save GPU mem for now
-        self.tmp_enc_layer = nn.Linear(512, d_model, bias=False, **factory_kwargs)
+        self.tmp_enc_layer = nn.Linear(ninp, d_model, bias=False, **factory_kwargs)
 
         self.blocks = nn.ModuleList(
             [
@@ -115,7 +114,7 @@ class MambaBackbone(nn.Module):
         )
 
         # Just to save GPU mem for now
-        self.tmp_dec_layer = nn.Linear(d_model, 512, bias=False, **factory_kwargs)
+        self.tmp_dec_layer = nn.Linear(d_model, ninp, bias=False, **factory_kwargs)
 
         self.norm_f = (nn.LayerNorm if not rms_norm else RMSNorm)(
             d_model, eps=norm_epsilon, **factory_kwargs
@@ -150,13 +149,11 @@ class MambaModel(nn.Module):
     '''
 
     def __init__(self,
-                 d_model: int,
                  encoder,
                  n_out,
                  ninp,
                  nhid,
                  num_layers: int = 1,
-                 input_len = 15,
                  ssm_config = None,
                  norm_epsilon: float = 1e-5,
                  rms_norm: bool = False,
@@ -170,15 +167,10 @@ class MambaModel(nn.Module):
 
         super().__init__()
         self.model_type = 'mamba-ssm'
-
-        d_model=32
-
-        self.d_model = d_model
         self.encoder = encoder
         self.num_layers = num_layers
         self.device = device
         self.dtype = dtype
-        self.input_len = input_len
         self.ssm_config = ssm_config
         self.rms_norm = rms_norm
         self.y_encoder = y_encoder
@@ -189,9 +181,8 @@ class MambaModel(nn.Module):
         factory_kwargs = {"device": device, "dtype": dtype}
 
         self.mamba_backbone = MambaBackbone(
-            d_model = self.d_model,
+            ninp=ninp,
             num_layers=self.num_layers,
-            input_len=self.input_len,
             ssm_config=self.ssm_config,
             norm_epsilon=1e-5,
             rms_norm=False,
@@ -204,10 +195,8 @@ class MambaModel(nn.Module):
 
         self.decoder = nn.Sequential(nn.Linear(ninp, nhid), nn.GELU(), nn.Linear(nhid, n_out))
 
-        self.output_layer = nn.Linear(d_model, 1, bias=False, **factory_kwargs) # Only want 1 Output, either 0 or 1.
-
         self.norm_f = (nn.LayerNorm if not rms_norm else RMSNorm)(
-            d_model, eps=norm_epsilon, **factory_kwargs
+            ninp, eps=norm_epsilon, **factory_kwargs
         )
 
         self.apply(
