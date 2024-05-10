@@ -7,6 +7,8 @@ import time
 from datetime import datetime
 
 import torch
+# Limit PyTorch CUDA use
+#torch.cuda.set_per_process_memory_fraction(0.6)
 import json
 
 from pathlib import Path
@@ -78,6 +80,7 @@ config['batch_size'] = 64 # just because we did this in the other config. Would 
 #------------------------------------------------------------------------------------------------
 
 # Get the model 
+#model = get_model(config, device, should_train=True, verbose=0) # , state_dict=model[2].state_dict()
 model = get_model_mamba(config, device, should_train=True, verbose=0) # , state_dict=model[2].state_dict()
 
 (hp_embedding, data, _), targets, single_eval_pos = next(iter(model[3]))

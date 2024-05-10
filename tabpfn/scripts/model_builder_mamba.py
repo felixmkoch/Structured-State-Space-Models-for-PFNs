@@ -216,16 +216,20 @@ def get_model_mamba(config, device, should_train=True, verbose=False, state_dict
     #
 
     def make_get_batch(model_proto, **extra_kwargs):
-        def new_get_batch(batch_size, seq_len, num_features, hyperparameters
-                , device, model_proto=model_proto
-                , **kwargs):
+        def new_get_batch(batch_size, 
+                          seq_len, 
+                          num_features, 
+                          hyperparameters, 
+                          device, 
+                          model_proto=model_proto, 
+                          **kwargs):
             kwargs = {**extra_kwargs, **kwargs} # new args overwrite pre-specified args
             return model_proto.get_batch(
-                batch_size=batch_size
-                , seq_len=seq_len
-                , device=device
-                , hyperparameters=hyperparameters
-                , num_features=num_features, **kwargs)
+                batch_size=batch_size, 
+                seq_len=seq_len, 
+                device=device, 
+                hyperparameters=hyperparameters, 
+                num_features=num_features, **kwargs)
         return new_get_batch
 
     if config['prior_type'] == 'prior_bag':
@@ -237,8 +241,7 @@ def get_model_mamba(config, device, should_train=True, verbose=False, state_dict
             get_batch_mlp = make_get_batch(priors.flexible_categorical, **{'get_batch': get_batch_mlp})
         prior_bag_hyperparameters = {'prior_bag_get_batch': (get_batch_gp, get_batch_mlp)
             , 'prior_bag_exp_weights_1': 2.0}
-        prior_hyperparameters = {**get_mlp_prior_hyperparameters(config), **get_gp_prior_hyperparameters(config)
-            , **prior_bag_hyperparameters}
+        prior_hyperparameters = {**get_mlp_prior_hyperparameters(config), **get_gp_prior_hyperparameters(config), **prior_bag_hyperparameters}
         model_proto = priors.prior_bag
     else:
         if config['prior_type'] == 'mlp':
@@ -348,7 +351,7 @@ def get_model_mamba(config, device, should_train=True, verbose=False, state_dict
     #------------------------------------------------------------------------------------------------
     #                                      MAMBA TRAIN
     #------------------------------------------------------------------------------------------------
-
+    
     model_mamba = train_mamba(model_proto.DataLoader
                   , loss
                   , encoder

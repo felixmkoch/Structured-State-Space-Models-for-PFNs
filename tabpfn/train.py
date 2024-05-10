@@ -30,12 +30,41 @@ class Losses():
 
 
 
-def train(priordataloader_class, criterion, encoder_generator, emsize=200, nhid=200, nlayers=6, nhead=2, dropout=0.0,
-          epochs=10, steps_per_epoch=100, batch_size=200, bptt=10, lr=None, weight_decay=0.0, warmup_epochs=10, input_normalization=False,
-          y_encoder_generator=None, pos_encoder_generator=None, decoder=None, extra_prior_kwargs_dict={}, scheduler=get_cosine_schedule_with_warmup,
-          load_weights_from_this_state_dict=None, validation_period=10, single_eval_pos_gen=None, bptt_extra_samples=None, gpu_device='cuda:0',
-          aggregate_k_gradients=1, verbose=True, style_encoder_generator=None, epoch_callback=None,
-          initializer=None, initialize_with_model=None, train_mixed_precision=False, efficient_eval_masking=True, **model_extra_args
+def train(priordataloader_class, 
+          criterion, 
+          encoder_generator, 
+          emsize=200, 
+          nhid=200, 
+          nlayers=6,
+          nhead=2, 
+          dropout=0.0,
+          epochs=10, 
+          steps_per_epoch=100, 
+          batch_size=200, 
+          bptt=10, 
+          lr=None, 
+          weight_decay=0.0, 
+          warmup_epochs=10, 
+          input_normalization=False,
+          y_encoder_generator=None, 
+          pos_encoder_generator=None, 
+          decoder=None, 
+          extra_prior_kwargs_dict={}, 
+          scheduler=get_cosine_schedule_with_warmup,
+          load_weights_from_this_state_dict=None, 
+          validation_period=10, 
+          single_eval_pos_gen=None, 
+          bptt_extra_samples=None, 
+          gpu_device='cuda:0',
+          aggregate_k_gradients=1, 
+          verbose=True, 
+          style_encoder_generator=None, 
+          epoch_callback=None,
+          initializer=None, 
+          initialize_with_model=None, 
+          train_mixed_precision=False, 
+          efficient_eval_masking=True, 
+          **model_extra_args
           ):
     device = gpu_device if torch.cuda.is_available() else 'cpu:0'
     print(f'Using {device} device')
@@ -62,10 +91,21 @@ def train(priordataloader_class, criterion, encoder_generator, emsize=200, nhid=
     else:
         n_out = 1
 
-    model = TransformerModel(encoder, n_out, emsize, nhead, nhid, nlayers, dropout, style_encoder=style_encoder,
-                             y_encoder=y_encoder_generator(1, emsize), input_normalization=input_normalization,
+    model = TransformerModel(encoder, 
+                             n_out, 
+                             emsize, 
+                             nhead, 
+                             nhid, 
+                             nlayers, 
+                             dropout, 
+                             style_encoder=style_encoder,
+                             y_encoder=y_encoder_generator(1, emsize), 
+                             input_normalization=input_normalization,
                              pos_encoder=(pos_encoder_generator or positional_encodings.NoPositionalEncoding)(emsize, bptt*2),
-                             decoder=decoder, init_method=initializer, efficient_eval_masking=efficient_eval_masking, **model_extra_args
+                             decoder=decoder, 
+                             init_method=initializer, 
+                             efficient_eval_masking=efficient_eval_masking, 
+                             **model_extra_args
                              )
     model.criterion = criterion
     if load_weights_from_this_state_dict is not None:
@@ -87,11 +127,6 @@ def train(priordataloader_class, criterion, encoder_generator, emsize=200, nhid=
         model = torch.nn.parallel.DistributedDataParallel(model, device_ids=[rank], output_device=rank, broadcast_buffers=False)
     dl.model = model
 
-
-    # learning rate
-    if lr is None:
-        lr = get_openai_lr(model)
-        print(f"Using OpenAI max lr of {lr}.")
     optimizer = torch.optim.AdamW(model.parameters(), lr=lr, weight_decay=weight_decay)
     scheduler = scheduler(optimizer, warmup_epochs, epochs if epochs is not None else 100) # when training for fixed time lr schedule takes 100 steps
 
@@ -124,8 +159,15 @@ def train(priordataloader_class, criterion, encoder_generator, emsize=200, nhid=
 
                 with autocast(enabled=scaler is not None):
                     # If style is set to None, it should not be transferred to device
-                    output = model(tuple(e.to(device) if torch.is_tensor(e) else e for e in data) if isinstance(data, tuple) else data.to(device)
-                                   , single_eval_pos=single_eval_pos)
+                    output = model(
+                        tuple(
+                            e.to(device) if torch.is_tensor(e) 
+                            else e 
+                            for e in data
+                            ) if isinstance(data, tuple) 
+                            else data.to(device)
+                                   , 
+                                   single_eval_pos=single_eval_pos)
 
                     forward_time = time.time() - before_forward
 
@@ -141,6 +183,9 @@ def train(priordataloader_class, criterion, encoder_generator, emsize=200, nhid=
                     elif isinstance(criterion, (nn.MSELoss, nn.BCEWithLogitsLoss)):
                         losses = criterion(output.flatten(), targets.to(device).flatten())
                     elif isinstance(criterion, nn.CrossEntropyLoss):
+                        print(f"Size of transformer target is: {targets.size()}")
+                        print(f"Reshape transformer targets size: {targets.to(device).long().flatten().size()}")
+                        print(f"Reshape transformer output size: {output[single_eval_pos:].to(device).long().flatten().size()}")
                         losses = criterion(output.reshape(-1, n_out), targets.to(device).long().flatten())
                     else:
                         losses = criterion(output, targets)

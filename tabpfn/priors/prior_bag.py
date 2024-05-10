@@ -3,15 +3,28 @@ import torch
 from .utils import get_batch_to_dataloader
 from tabpfn.utils import default_device
 
-def get_batch(batch_size, seq_len, num_features, device=default_device
-              , hyperparameters=None, batch_size_per_gp_sample=None, **kwargs):
+def get_batch(batch_size, 
+              seq_len, 
+              num_features, 
+              device=default_device, 
+              hyperparameters=None, 
+              batch_size_per_gp_sample=None, 
+              **kwargs
+              ):
+    
     batch_size_per_gp_sample = batch_size_per_gp_sample or (min(64, batch_size))
     num_models = batch_size // batch_size_per_gp_sample
     assert num_models * batch_size_per_gp_sample == batch_size, f'Batch size ({batch_size}) not divisible by batch_size_per_gp_sample ({batch_size_per_gp_sample})'
 
-    args = {'device': device, 'seq_len': seq_len, 'num_features': num_features, 'batch_size': batch_size_per_gp_sample}
+    args = {
+        'device': device, 
+        'seq_len': seq_len, 
+        'num_features': num_features, 
+        'batch_size': batch_size_per_gp_sample
+        }
 
     prior_bag_priors_get_batch = hyperparameters['prior_bag_get_batch']
+
     prior_bag_priors_p = [1.0] + [hyperparameters[f'prior_bag_exp_weights_{i}'] for i in range(1, len(prior_bag_priors_get_batch))]
 
     weights = torch.tensor(prior_bag_priors_p, dtype=torch.float)  # create a tensor of weights
@@ -20,6 +33,10 @@ def get_batch(batch_size, seq_len, num_features, device=default_device
     if 'verbose' in hyperparameters and hyperparameters['verbose']:
         print('PRIOR_BAG:', weights, batch_assignments)
 
+    # The function here is: (get_batch_gp, get_batch_mlp)[1]
+    # Meaning that: 
+    # get_batch_gp = make_get_batch(priors.flexible_categorical, **{'get_batch': get_batch_gp}) and 
+    # get_batch_mlp = make_get_batch(priors.flexible_categorical, **{'get_batch': get_batch_mlp})
     sample = [prior_bag_priors_get_batch[int(prior_idx)](hyperparameters=hyperparameters, **args, **kwargs) for prior_idx in batch_assignments]
 
     x, y, y_ = zip(*sample)

@@ -77,7 +77,7 @@ def train_mamba(priordataloader_class,
           bptt_extra_samples=None, 
           gpu_device='cuda:0',
           aggregate_k_gradients=1, 
-          verbose=True, 
+          verbose=True,
           style_encoder_generator=None, 
           epoch_callback=None,
           initializer=None, 
@@ -145,18 +145,23 @@ def train_mamba(priordataloader_class,
     # MAMBA Model
     #
 
-    print(f"BPTT is : {bptt} and aggregate_k_gradients is {aggregate_k_gradients}")
+    #print(f"BPTT is : {bptt} and aggregate_k_gradients is {aggregate_k_gradients}")
 
     mamba_model_d = bptt * aggregate_k_gradients
 
     mamba_model = MambaModel(
         d_model=mamba_model_d,
+        encoder=encoder,
+        n_out=n_out,
+        ninp=emsize,
+        nhid=nhid,
+        y_encoder=y_encoder_generator(1, emsize),
         num_layers=2,
         input_len=dl.num_features,
         device=device,
     )
 
-    print("MAMBA Model worked so far.")
+    #print("MAMBA Model worked so far.")
     
     
     
@@ -233,8 +238,15 @@ def train_mamba(priordataloader_class,
 
                 with autocast(enabled=scaler is not None):
                     # If style is set to None, it should not be transferred to device
-                    output = mamba_model(tuple(e.to(device) if torch.is_tensor(e) else e for e in data) if isinstance(data, tuple) else data.to(device)
-                                   , single_eval_pos=single_eval_pos)
+                    output = mamba_model(
+                        tuple(
+                            e.to(device) if torch.is_tensor(e) else e 
+                            for e in data
+                            ) 
+                            if isinstance(data, tuple)
+
+                        else data.to(device), 
+                        single_eval_pos=single_eval_pos)
 
                     forward_time = time.time() - before_forward
 
@@ -250,7 +262,10 @@ def train_mamba(priordataloader_class,
                     elif isinstance(criterion, (nn.MSELoss, nn.BCEWithLogitsLoss)):
                         losses = criterion(output.flatten(), targets.to(device).flatten())
                     elif isinstance(criterion, nn.CrossEntropyLoss):
-                        losses = criterion(output.reshape(-1, n_out), targets.to(device).long().flatten())
+                        # Original: losses = criterion(output.reshape(-1, n_out), targets.to(device).long().flatten())
+                        # Done with single_eval_pos -> TODO
+                        # Also Long did note work.
+                        losses = criterion(output[single_eval_pos:].to(device).flatten(), targets.to(device).flatten())
                     else:
                         losses = criterion(output, targets)
                     losses = losses.view(*output.shape[0:2])
@@ -305,8 +320,8 @@ def train_mamba(priordataloader_class,
     # Training Process
     #
     
-    print("BEGIN TRAINIG PROCESS")
-    print(f"NUM EPOCHS: {epochs}")
+    print("Beginning the Training process")
+    print(f"Total number of epochs: {epochs}")
 
     total_loss = float('inf')
     total_positional_losses = float('inf')
@@ -338,8 +353,8 @@ def train_mamba(priordataloader_class,
             print("------------------ EPOCH END ----------------------")
 
             # stepping with wallclock time based scheduler
-            if epoch_callback is not None and rank == 0:
-                epoch_callback(model, epoch / epochs)
+            #if epoch_callback is not None and rank == 0:
+            #    epoch_callback(model, epoch / epochs)
             scheduler.step()
     except KeyboardInterrupt:
         pass

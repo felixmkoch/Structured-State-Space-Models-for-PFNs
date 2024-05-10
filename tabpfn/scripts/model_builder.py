@@ -188,7 +188,14 @@ def get_meta_gp_prior_hyperparameters(config):
     return config
 
 
-def get_model(config, device, should_train=True, verbose=False, state_dict=None, epoch_callback=None):
+def get_model(config, 
+              device, 
+              should_train=True, 
+              verbose=False, 
+              state_dict=None, 
+              epoch_callback=None
+              ):
+    
     import tabpfn.priors as priors
     from tabpfn.train import train, Losses
     extra_kwargs = {}
@@ -283,7 +290,7 @@ def get_model(config, device, should_train=True, verbose=False, state_dict=None,
     config['eval_positions'] = [int(config['bptt'] * 0.95)] if config['bptt_extra_samples'] is None else [int(config['bptt'])]
 
     epochs = 0 if not should_train else config['epochs']
-    #print('MODEL BUILDER', model_proto, extra_kwargs['get_batch'])
+    
     model = train(model_proto.DataLoader
                   , loss
                   , encoder

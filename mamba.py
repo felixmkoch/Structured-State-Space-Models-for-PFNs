@@ -95,7 +95,8 @@ class MambaBackbone(nn.Module):
         print(f"Dimension of model is: {d_model}")
         print(f"Input length is {input_len}")
 
-        self.input_layer = nn.Linear(input_len, d_model, bias=False, **factory_kwargs)
+        # Just to save GPU mem for now
+        self.tmp_enc_layer = nn.Linear(512, d_model, bias=False, **factory_kwargs)
 
         self.blocks = nn.ModuleList(
             [
@@ -113,6 +114,9 @@ class MambaBackbone(nn.Module):
             ]
         )
 
+        # Just to save GPU mem for now
+        self.tmp_dec_layer = nn.Linear(d_model, 512, bias=False, **factory_kwargs)
+
         self.norm_f = (nn.LayerNorm if not rms_norm else RMSNorm)(
             d_model, eps=norm_epsilon, **factory_kwargs
         )
@@ -127,54 +131,17 @@ class MambaBackbone(nn.Module):
 
 
     def forward(self,
-                input,
+                x,
                 inference_parameters
                 ):
             
-        print(f"Input Tensor before the Input layer: {input.size()}")
+        hidden_states = self.tmp_enc_layer(x)
 
-        hidden_states = self.input_layer(input)
         residual = None
-
-        print(f"Hidden States before the mamba blocks: {hidden_states.size()}")
 
         for block in self.blocks: hidden_states, residual = block(hidden_states, residual, inference_params=inference_parameters)
 
-        print(f"Hidden States after MAMBA Blocks: {hidden_states.size()}")
-
-        return hidden_states
-
-
-
-class MambaModelSimple(nn.Module):
-    '''
-    Mamba model based on the Mamba Model from state-spaces.
-    '''
-
-    def __init__(self,
-                 model_dim: int,
-                 d_state: int,
-                 d_conv: int,
-                 expand: int,
-                 device: str = "cpu"
-                 ):
-        
-        print(f"Initialize Mambe model on {device} device.")
-        
-        mamba_model = Mamba(
-            d_model=model_dim,
-            d_state=d_state,
-            d_conv=d_conv,
-            expand=expand
-        )
-        
-        pass
-
-
-    def forward(self,
-                input_tensor
-                ):
-        pass
+        return self.tmp_dec_layer(hidden_states)
 
 
 class MambaModel(nn.Module):
@@ -184,11 +151,16 @@ class MambaModel(nn.Module):
 
     def __init__(self,
                  d_model: int,
+                 encoder,
+                 n_out,
+                 ninp,
+                 nhid,
                  num_layers: int = 1,
                  input_len = 15,
                  ssm_config = None,
                  norm_epsilon: float = 1e-5,
                  rms_norm: bool = False,
+                 y_encoder=None,
                  initializer_config = None,
                  fused_add_norm = False,
                  residual_in_fp32 = False,
@@ -199,13 +171,17 @@ class MambaModel(nn.Module):
         super().__init__()
         self.model_type = 'mamba-ssm'
 
+        d_model=32
+
         self.d_model = d_model
+        self.encoder = encoder
         self.num_layers = num_layers
         self.device = device
         self.dtype = dtype
         self.input_len = input_len
         self.ssm_config = ssm_config
         self.rms_norm = rms_norm
+        self.y_encoder = y_encoder
         self.initializer_config = initializer_config
         self.residual_in_fp32 = residual_in_fp32
         self.fused_add_norm = fused_add_norm
@@ -225,6 +201,8 @@ class MambaModel(nn.Module):
             device=self.device,
             dtype=self.dtype
         )
+
+        self.decoder = nn.Sequential(nn.Linear(ninp, nhid), nn.GELU(), nn.Linear(nhid, n_out))
 
         self.output_layer = nn.Linear(d_model, 1, bias=False, **factory_kwargs) # Only want 1 Output, either 0 or 1.
 
@@ -250,9 +228,22 @@ class MambaModel(nn.Module):
 
         style_src, x_src, y_src = src               # Split input into style, train (x) and test (y) part.
 
+        print(f"Sizes of x_src: {x_src.size()}  ___ and y_src: {y_src.size()}")
+
+        x_src = self.encoder(x_src)
+        y_src = self.y_encoder(y_src.unsqueeze(-1) if len(y_src.shape) < len(x_src.shape) else y_src)
+
+        print(f"Sizes of Encoded x_src: {x_src.size()} ___ and y_src: {y_src.size()}")
+
         hidden_states = self.mamba_backbone(x_src, inference_parameters=None)
 
-        output_val = self.output_layer(hidden_states)
+        print("Checkpoint: this is where MAMBA comes in _______________________")
 
+        print(f"Output size after the MAMBA stuff: {hidden_states.size()}")
 
-        print(f"Output of the Mamba Model is: {output_val}")
+        output = self.decoder(hidden_states)
+        print(f"Output after decoder: {output.size()}")
+
+        if not style_src: style_src = [] # To overcome the NoneType has no len() error.
+
+        return output[single_eval_pos+len(style_src):]

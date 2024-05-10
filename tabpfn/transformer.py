@@ -12,14 +12,40 @@ from tabpfn.utils import SeqBN, bool_mask_to_att_mask
 
 
 class TransformerModel(nn.Module):
-    def __init__(self, encoder, n_out, ninp, nhead, nhid, nlayers, dropout=0.0, style_encoder=None, y_encoder=None,
-                 pos_encoder=None, decoder=None, input_normalization=False, init_method=None, pre_norm=False,
-                 activation='gelu', recompute_attn=False, num_global_att_tokens=0, full_attention=False,
-                 all_layers_same_init=False, efficient_eval_masking=True):
+    def __init__(self, 
+                 encoder, 
+                 n_out, 
+                 ninp, 
+                 nhead, 
+                 nhid, 
+                 nlayers, 
+                 dropout=0.0, 
+                 style_encoder=None, 
+                 y_encoder=None,
+                 pos_encoder=None, 
+                 decoder=None, 
+                 input_normalization=False, 
+                 init_method=None, 
+                 pre_norm=False,
+                 activation='gelu', 
+                 recompute_attn=False, 
+                 num_global_att_tokens=0, 
+                 full_attention=False,
+                 all_layers_same_init=False, 
+                 efficient_eval_masking=True
+                 ):
+        
         super().__init__()
         self.model_type = 'Transformer'
-        encoder_layer_creator = lambda: TransformerEncoderLayer(ninp, nhead, nhid, dropout, activation=activation,
-                                                                pre_norm=pre_norm, recompute_attn=recompute_attn)
+        encoder_layer_creator = lambda: TransformerEncoderLayer(ninp, 
+                                                                nhead, 
+                                                                nhid, 
+                                                                dropout, 
+                                                                activation=activation,
+                                                                pre_norm=pre_norm, 
+                                                                recompute_attn=recompute_attn
+                                                                )
+        
         self.transformer_encoder = TransformerEncoder(encoder_layer_creator(), nlayers)\
             if all_layers_same_init else TransformerEncoderDiffInit(encoder_layer_creator, nlayers)
         self.ninp = ninp
@@ -104,10 +130,20 @@ class TransformerModel(nn.Module):
             src = (None,) + src
 
         style_src, x_src, y_src = src
+
+        print(f"Sizes of x_src: {x_src.size()} ___ and y_src: {y_src.size()}")
+
         x_src = self.encoder(x_src)
+
         y_src = self.y_encoder(y_src.unsqueeze(-1) if len(y_src.shape) < len(x_src.shape) else y_src)
+
+        print(f"Size of x_src after encoder layer: {x_src.size()} ___ and y_src: {y_src.size()}")
+
         style_src = self.style_encoder(style_src).unsqueeze(0) if self.style_encoder else \
             torch.tensor([], device=x_src.device)
+        
+        print("Checkpoint: this is where Transformer comes in _________________________________")
+        
         global_src = torch.tensor([], device=x_src.device) if self.global_att_embeddings is None else \
             self.global_att_embeddings.weight.unsqueeze(1).repeat(1, x_src.shape[1], 1)
 
@@ -139,7 +175,10 @@ class TransformerModel(nn.Module):
             src = self.pos_encoder(src)
 
         output = self.transformer_encoder(src, src_mask)
+
+        print(f"Output size after Transformer Stuff: {output.size()}")
         output = self.decoder(output)
+        print(f"Output after decoder: {output.size()}")
         return output[single_eval_pos+len(style_src)+(self.global_att_embeddings.num_embeddings if self.global_att_embeddings else 0):]
 
     @torch.no_grad()
