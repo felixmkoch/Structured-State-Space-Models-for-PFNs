@@ -265,7 +265,7 @@ def train_mamba(priordataloader_class,
                         # Original: losses = criterion(output.reshape(-1, n_out), targets.to(device).long().flatten())
                         # Done with single_eval_pos -> TODO
                         # Also Long did note work.
-                        losses = criterion(output[single_eval_pos:].to(device).flatten(), targets.to(device).flatten())
+                        losses = criterion(output.reshape(-1, n_out), targets.to(device).long().flatten())
                     else:
                         losses = criterion(output, targets)
                     losses = losses.view(*output.shape[0:2])

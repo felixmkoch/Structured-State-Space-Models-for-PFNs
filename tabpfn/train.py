@@ -183,9 +183,6 @@ def train(priordataloader_class,
                     elif isinstance(criterion, (nn.MSELoss, nn.BCEWithLogitsLoss)):
                         losses = criterion(output.flatten(), targets.to(device).flatten())
                     elif isinstance(criterion, nn.CrossEntropyLoss):
-                        print(f"Size of transformer target is: {targets.size()}")
-                        print(f"Reshape transformer targets size: {targets.to(device).long().flatten().size()}")
-                        print(f"Reshape transformer output size: {output[single_eval_pos:].to(device).long().flatten().size()}")
                         losses = criterion(output.reshape(-1, n_out), targets.to(device).long().flatten())
                     else:
                         losses = criterion(output, targets)
