@@ -217,21 +217,12 @@ class MambaModel(nn.Module):
 
         style_src, x_src, y_src = src               # Split input into style, train (x) and test (y) part.
 
-        print(f"Sizes of x_src: {x_src.size()}  ___ and y_src: {y_src.size()}")
-
         x_src = self.encoder(x_src)
         y_src = self.y_encoder(y_src.unsqueeze(-1) if len(y_src.shape) < len(x_src.shape) else y_src)
 
-        print(f"Sizes of Encoded x_src: {x_src.size()} ___ and y_src: {y_src.size()}")
-
         hidden_states = self.mamba_backbone(x_src, inference_parameters=None)
 
-        print("Checkpoint: this is where MAMBA comes in _______________________")
-
-        print(f"Output size after the MAMBA stuff: {hidden_states.size()}")
-
         output = self.decoder(hidden_states)
-        print(f"Output after decoder: {output.size()}")
 
         if not style_src: style_src = [] # To overcome the NoneType has no len() error.
 

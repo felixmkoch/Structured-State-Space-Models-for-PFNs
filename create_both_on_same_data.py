@@ -18,6 +18,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from tabpfn.scripts.model_builder import get_model, save_model
 from tabpfn.scripts.model_builder_mamba import get_model_mamba 
+from tabpfn.scripts.model_builder_both import get_model_both
 from tabpfn.scripts.model_configs import *
 
 from tabpfn.priors.utils import plot_features
@@ -76,51 +77,19 @@ config['batch_size'] = 64 # just because we did this in the other config. Would 
 #------------------------------------------------------------------------------------------------
 
 #------------------------------------------------------------------------------------------------
-#                                           MODEL
+#                                           MODELS
 #------------------------------------------------------------------------------------------------
 
 # Get the model 
 #model = get_model(config, device, should_train=True, verbose=0) # , state_dict=model[2].state_dict()
-model = get_model_mamba(config, device, should_train=True, verbose=0) # , state_dict=model[2].state_dict()
+transformer_model, mamba_model = get_model_both(config, device, should_train=True, verbose=0) # , state_dict=model[2].state_dict()
 
-(hp_embedding, data, _), targets, single_eval_pos = next(iter(model[3]))
-
-
-#------------------------------------------------------------------------------------------------
-#                                         END MODEL
-#------------------------------------------------------------------------------------------------
+(transformer_hp_embedding, transformer_data, _), transformer_targets, transformer_single_eval_pos = next(iter(transformer_model[3]))
+(mamba_hp_embedding, mamba_data, _), mamba_targets, mamba_single_eval_pos = next(iter(mamba_model[3]))
 
 #------------------------------------------------------------------------------------------------
-#                                         VISUALIZE
+#                                         END MODELS
 #------------------------------------------------------------------------------------------------
-
-
-from tabpfn.utils import normalize_data
-fig = plt.figure(figsize=(8, 8))
-N = 100
-
-print(f"# Data Entries: {len(data)}")
-print(f"Type of the  Data Entries: {type(data)}")
-print(f"# Target Entries: {len(data)}")
-print(f"Type of the  Target Entries: {type(data)}")
-
-print(f"Torch Data Entries look like: ")
-print(data[:50])
-
-# Back Transformation
-data = data.to("cpu")
-targets = targets.to("cpu")
-
-d = np.concatenate([data[:, 0, :].T, np.expand_dims(targets[:, 0], -1).T])
-d[np.isnan(d)] = 0
-c = np.corrcoef(d)
-plt.matshow(np.abs(c), vmin=0, vmax=1)
-plt.show()
-
-#------------------------------------------------------------------------------------------------
-#                                       END VISUALIZE
-#------------------------------------------------------------------------------------------------
-
 
 
 print("works")

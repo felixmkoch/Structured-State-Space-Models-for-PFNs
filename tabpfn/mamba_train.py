@@ -119,10 +119,6 @@ def train_mamba(priordataloader_class,
     # MAMBA Model
     #
 
-    #print(f"BPTT is : {bptt} and aggregate_k_gradients is {aggregate_k_gradients}")
-
-    mamba_model_d = bptt * aggregate_k_gradients
-
     mamba_model = MambaModel(
         encoder=encoder,
         n_out=n_out,
@@ -181,16 +177,8 @@ def train_mamba(priordataloader_class,
         # Single_eval_pos idk what this does.
         
         for batch, (data, targets, single_eval_pos) in enumerate(dl):
-            
-            #print(f"Data type: {type(data)}")
-            #print(f"Len of data tuple: {len(data)}")
-            #print(f"Shape of data: {data[1].size()} and {data[2].size()}")
-            #print(f"Data Value: {data}")
-            #print(f"Targets Value: {targets}")
-            #print(f"Shape of target: {targets.size()}")
 
             print(f"Currently in batch {batch + 1} out of {len(dl)} batches")
-            
             
             if using_dist and not (batch % aggregate_k_gradients == aggregate_k_gradients - 1):
                 cm = mamba_model.no_sync()

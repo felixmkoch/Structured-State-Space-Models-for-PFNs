@@ -131,18 +131,12 @@ class TransformerModel(nn.Module):
 
         style_src, x_src, y_src = src
 
-        print(f"Sizes of x_src: {x_src.size()} ___ and y_src: {y_src.size()}")
-
         x_src = self.encoder(x_src)
 
         y_src = self.y_encoder(y_src.unsqueeze(-1) if len(y_src.shape) < len(x_src.shape) else y_src)
 
-        print(f"Size of x_src after encoder layer: {x_src.size()} ___ and y_src: {y_src.size()}")
-
         style_src = self.style_encoder(style_src).unsqueeze(0) if self.style_encoder else \
             torch.tensor([], device=x_src.device)
-        
-        print("Checkpoint: this is where Transformer comes in _________________________________")
         
         global_src = torch.tensor([], device=x_src.device) if self.global_att_embeddings is None else \
             self.global_att_embeddings.weight.unsqueeze(1).repeat(1, x_src.shape[1], 1)
@@ -176,9 +170,7 @@ class TransformerModel(nn.Module):
 
         output = self.transformer_encoder(src, src_mask)
 
-        print(f"Output size after Transformer Stuff: {output.size()}")
         output = self.decoder(output)
-        print(f"Output after decoder: {output.size()}")
         return output[single_eval_pos+len(style_src)+(self.global_att_embeddings.num_embeddings if self.global_att_embeddings else 0):]
 
     @torch.no_grad()
