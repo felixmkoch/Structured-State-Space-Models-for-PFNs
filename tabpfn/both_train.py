@@ -431,9 +431,9 @@ def train_both_models(priordataloader_class,
         pass
 
     if rank == 0: # trivially true for non-parallel training
-        if isinstance(model, torch.nn.parallel.DistributedDataParallel):
-            model = model.module
-            dl = None
+        #if isinstance(model, torch.nn.parallel.DistributedDataParallel):
+        #    model = model.module
+        #    dl = None
         return \
             (transformer_total_loss, transformer_total_positional_losses, transformer_model.to('cpu'), dl), \
             (mamba_total_loss, mamba_total_positional_losses, mamba_model.to('cpu'), dl)

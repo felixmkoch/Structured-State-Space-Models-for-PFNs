@@ -29,6 +29,14 @@ from tabpfn.priors.utils import uniform_int_sampler_f
 #------------------------------------------------------------------------------------------------
 
 #------------------------------------------------------------------------------------------------
+#                                     HELPER FUNCTIONS
+#------------------------------------------------------------------------------------------------
+
+#------------------------------------------------------------------------------------------------
+#                                   END HELPER FUNCTIONS
+#------------------------------------------------------------------------------------------------
+
+#------------------------------------------------------------------------------------------------
 #                                        PARAMETER
 #------------------------------------------------------------------------------------------------
 
@@ -37,7 +45,8 @@ device = "cuda" if torch.cuda.is_available() else "cpu"
 
 # Other Parameters
 maximum_runtime = 10000
-base_path = '.'
+base_path = os.path.join("tabpfn")
+print(f"Base APth is: {base_path}")
 max_features = 100
 large_datasets = True
 max_samples = 10000 if large_datasets else 5000
@@ -71,6 +80,7 @@ config["num_classes"] = uniform_int_sampler_f(2, config['max_num_classes']) # Wr
 config["num_features_used"] = uniform_int_sampler_f(1, max_features)
 
 config['batch_size'] = 64 # just because we did this in the other config. Would be 64 default
+config["epochs"] = 1
 
 #------------------------------------------------------------------------------------------------
 #                                         END CONFIG
@@ -87,9 +97,18 @@ transformer_model, mamba_model = get_model_both(config, device, should_train=Tru
 (transformer_hp_embedding, transformer_data, _), transformer_targets, transformer_single_eval_pos = next(iter(transformer_model[3]))
 (mamba_hp_embedding, mamba_data, _), mamba_targets, mamba_single_eval_pos = next(iter(mamba_model[3]))
 
+add_name = "mamba_custom"
+i = 2
+config['epoch_in_training'] = config["epochs"]
+
+save_model(mamba_model[2], 
+           base_path, 
+           f'models_diff/prior_diff_real_checkpoint{add_name}_epoch_{i}.cpkt',
+           config
+           )
+
 #------------------------------------------------------------------------------------------------
 #                                         END MODELS
 #------------------------------------------------------------------------------------------------
-
 
 print("works")

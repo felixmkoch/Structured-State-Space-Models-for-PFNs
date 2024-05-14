@@ -85,12 +85,22 @@ def load_model_workflow(i, e, add_name, base_path, device='cpu', eval_addition='
     else:
         model_file, model_path, results_file = check_file(e)
 
+    #
+    # Load Custom model temp
+    #
+
+    model_file = "models_diff/prior_diff_real_checkpointtransformer_custom_epoch_2.cpkt"
+
+    #
+    # End Load Custom Model Temp
+    #
+
     if model_file is None:
         model_file, model_path, results_file = get_file(e)
         raise Exception('No checkpoint found at '+str(model_path))
 
 
-    #print(f'Loading {model_file}')
+    print(f'Loading {model_file}')
     if only_inference:
         # print('Loading model that can be used for inference only')
         model, c = load_model_only_inference(base_path, model_file, device)
@@ -150,8 +160,17 @@ class TabPFNClassifier(BaseEstimator, ClassifierMixin):
         if model_key in self.models_in_memory:
             model, c, results_file = self.models_in_memory[model_key]
         else:
-            model, c, results_file = load_model_workflow(i, -1, add_name=model_string, base_path=base_path, device=device,
-                                                         eval_addition='', only_inference=only_inference)
+            # model_file = f'models_diff/prior_diff_real_checkpoint{add_name}_n_{i}_epoch_{e}.cpkt'
+            # i, e, add_name
+
+            model, c, results_file = load_model_workflow(i,                     # i
+                                                         -1,                    # e
+                                                         add_name=model_string, # add_name 
+                                                         base_path=base_path, 
+                                                         device=device,
+                                                         eval_addition='', 
+                                                         only_inference=only_inference
+                                                         )
             self.models_in_memory[model_key] = (model, c, results_file)
             if len(self.models_in_memory) == 2:
                 print('Multiple models in memory. This might lead to memory issues. Consider calling remove_models_from_memory()')

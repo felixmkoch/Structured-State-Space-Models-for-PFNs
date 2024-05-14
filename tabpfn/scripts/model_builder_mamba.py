@@ -2,6 +2,7 @@ from functools import partial
 import tabpfn.encoders as encoders
 
 from tabpfn.transformer import TransformerModel
+from mamba import MambaModel
 from tabpfn.utils import get_uniform_single_eval_pos_sampler
 import torch
 import math
@@ -47,32 +48,43 @@ def load_model_only_inference(path, filename, device):
         encoder = partial(encoders.Linear, replace_nan_by_zero=True)
 
     n_out = config_sample['max_num_classes']
+    emsize = config_sample["emsize"]
 
     device = device if torch.cuda.is_available() else 'cpu:0'
-    encoder = encoder(config_sample['num_features'], config_sample['emsize'])
+    encoder = encoder(config_sample['num_features'], emsize)
 
-    nhid = config_sample['emsize'] * config_sample['nhid_factor']
+    nhid = emsize * config_sample['nhid_factor']
     y_encoder_generator = encoders.get_Canonical(config_sample['max_num_classes']) \
         if config_sample.get('canonical_y_encoder', False) else encoders.Linear
 
     assert config_sample['max_num_classes'] > 2
     loss = torch.nn.CrossEntropyLoss(reduction='none', weight=torch.ones(int(config_sample['max_num_classes'])))
 
-    model = TransformerModel(encoder, n_out, config_sample['emsize'], config_sample['nhead'], nhid,
-                             config_sample['nlayers'], y_encoder=y_encoder_generator(1, config_sample['emsize']),
-                             dropout=config_sample['dropout'],
-                             efficient_eval_masking=config_sample['efficient_eval_masking'])
+    #model = TransformerModel(encoder, n_out, config_sample['emsize'], config_sample['nhead'], nhid,
+    #                         config_sample['nlayers'], y_encoder=y_encoder_generator(1, config_sample['emsize']),
+    #                         dropout=config_sample['dropout'],
+    #                         efficient_eval_masking=config_sample['efficient_eval_masking'])
+    
+    mamba_model = MambaModel(
+        encoder=encoder,
+        n_out=n_out,
+        ninp=emsize,
+        nhid=nhid,
+        y_encoder=y_encoder_generator(1, emsize),
+        num_layers=2,
+        device=device,
+    )
 
     # print(f"Using a Transformer with {sum(p.numel() for p in model.parameters()) / 1000 / 1000:.{2}f} M parameters")
 
-    model.criterion = loss
+    mamba_model.criterion = loss
     module_prefix = 'module.'
     model_state = {k.replace(module_prefix, ''): v for k, v in model_state.items()}
-    model.load_state_dict(model_state)
-    model.to(device)
-    model.eval()
+    mamba_model.load_state_dict(model_state)
+    mamba_model.to(device)
+    mamba_model.eval()
 
-    return (float('inf'), float('inf'), model), config_sample # no loss measured
+    return (float('inf'), float('inf'), mamba_model), config_sample # no loss measured
 
 def load_model(path, filename, device, eval_positions, verbose):
     # TODO: This function only restores evaluation functionality but training canät be continued. It is also not flexible.
