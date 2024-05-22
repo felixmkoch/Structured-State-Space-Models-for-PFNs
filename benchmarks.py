@@ -29,7 +29,18 @@ import tikzplotlib
 #------------------------------------------------------------------------------------------------
 
 cc_test_datasets_multiclass, cc_test_datasets_multiclass_df = \
-    load_openml_list(open_cc_dids, multiclass=True, shuffled=True, filter_for_nan=False, max_samples = 10000, num_feats=100, return_capped=True)
+    load_openml_list(
+        open_cc_dids, 
+        multiclass=True, 
+        shuffled=True, 
+        filter_for_nan=False, 
+        max_samples = 10000, 
+        num_feats=100, 
+        return_capped=True
+        )
+
+# cc_test_dataset_muticlass_df: [did, Num_Features, Num_Classes...] in a dataframe
+# cc_test_datasets_multiclass: list[list[object]]; List1: List of Tasks; List2: name, tensor, tensor, ...;
 
 
 #------------------------------------------------------------------------------------------------
@@ -58,12 +69,17 @@ clf_dict= {'gp': gp_metric,
            'logistic': logistic_metric, 
            'autosklearn': autosklearn_metric, 
            'autosklearn2': autosklearn2_metric, 
-           'autogluon': autogluon_metric}
+           'autogluon': autogluon_metric
+           }
 
-metric_renamer = {'roc': 'ROC AUC', 'cross_entropy': 'Cross entropy'
-                  , 'rank_roc': 'Mean ROC AUC Rank', 'rank_cross_entropy': 'Mean Cross entropy Rank'
-                  , 'wins_roc': 'Mean ROC AUC Wins', 'wins_cross_entropy': 'Mean Cross entropy Wins'
-                  , 'time': 'actual time taken'}
+metric_renamer = {'roc': 'ROC AUC', 
+                  'cross_entropy': 'Cross entropy', 
+                  'rank_roc': 'Mean ROC AUC Rank', 
+                  'rank_cross_entropy': 'Mean Cross entropy Rank', 
+                  'wins_roc': 'Mean ROC AUC Wins', 
+                  'wins_cross_entropy': 'Mean Cross entropy Wins', 
+                  'time': 'actual time taken'
+                  }
 
 max_times_renamer = {0.5: "0.5s", 1: "1s", 5: "5s", 15: "15s", 30: "30s", 60: "1min", 300: "5min", 900: "15min", 3600: "1h", 14400: "4h"}
 
@@ -100,6 +116,7 @@ def eval_method(task_type,
                 verbose=False):
     
     dids = dids if type(dids) is list else [dids]
+
     
     for did in dids:
 
@@ -127,6 +144,16 @@ def eval_method(task_type,
                           split_number=split_number, 
                           verbose=verbose, 
                           max_time=max_time)
+
+        # RESULT IS ONLY USED ONCE IN THIS FOR LOOP!
+
+        # Result is a dict with keys: ['metric_used', 
+        # 'bptt', 
+        # 'eval_positions', 
+        # 'balance-scale_best_configs_at_1000', 
+        # 'balance-scale_outputs_at_1000', 
+        # 'balance-scale_ys_at_1000', 
+        # 'balance-scale_time_at_1000', ...]
     
     return result
 
@@ -213,10 +240,13 @@ def make_tabular_results_plot(metric_key, exclude, max_times, df_, grouping=True
 
 suite = 'cc'
 
-test_datasets = get_datasets('test',task_type, suite=suite)
+# Is: list[list[object]]; List1: List of Tasks; List2: name, tensor, tensor, ...;
+test_datasets = get_datasets('test', task_type, suite=suite)
+
 
 if REDO: 
     overwrite=True
+    # Each entry in this list contains a result, meaning a dict containing information about the run and different settings on datasets as keys.
     jobs = [
         eval_method(task_type, m, did, selector, eval_positions, max_time, metric_used, split_number)
         for did in range(0, len(test_datasets))
@@ -225,6 +255,8 @@ if REDO:
         for max_time in max_times
         for split_number in split_numbers         #for split_number in [1, 2, 3, 4, 5]
     ]
+
+    print(type(jobs))
 
 #------------------------------------------------------------------------------------------------
 #                                      END DO STUFF
@@ -261,6 +293,16 @@ for method in baseline_methods:
                                 split_number=split_number
                                 )
             
+
+# Global results: ["transformer_time_15roc_auc_split_2", "transformer_time_15roc_auc_split_4", ...]
+# Where each dict looks like ['metric_used', 
+        # 'bptt', 
+        # 'eval_positions', 
+        # 'balance-scale_best_configs_at_1000', 
+        # 'balance-scale_outputs_at_1000', 
+        # 'balance-scale_ys_at_1000', 
+        # 'balance-scale_time_at_1000', ...]
+
 
 ''''
 path_ = 'prior_tuning_result.pkl'
@@ -301,6 +343,11 @@ calculate_score(tabular_metrics.accuracy_metric, 'acc', global_results, test_dat
 calculate_score(tabular_metrics.time_metric, 'time', global_results, test_datasets, eval_positions + [-1], aggregator='sum', limit_to=limit_to)
 calculate_score(tabular_metrics.time_metric, 'time', global_results, test_datasets, eval_positions + [-1], aggregator='mean', limit_to=limit_to)
 calculate_score(tabular_metrics.count_metric, 'count', global_results, test_datasets, eval_positions + [-1], aggregator='sum', limit_to=limit_to)
+
+
+
+# Here global results remain the same for most parts
+# Except all other scored are added in a string-like manner to the dict.
 
 df_ = []
 metric_keys = ['roc', 'cross_entropy', 'time']
