@@ -35,3 +35,4 @@ rm -rf tmp
 # TabPFN Installations
 pip install -r requirements.txt
 
+!pip install py_experimenter==1.4.0
