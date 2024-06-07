@@ -84,7 +84,7 @@ config['emsize'] = 128 # Default was on 512, just to save some GPU mem.
 config["epochs"] = 1
 
 mamba_autocast = False
-num_mamba_layers=2
+config["mamba_num_layers"] = 5
 
 #------------------------------------------------------------------------------------------------
 #                                         END CONFIG
@@ -96,7 +96,7 @@ num_mamba_layers=2
 
 # Get the model 
 #model = get_model(config, device, should_train=True, verbose=0) # , state_dict=model[2].state_dict()
-transformer_model, mamba_model = get_model_both(config, device, should_train=True, verbose=0, mamba_autocast=mamba_autocast,num_mamba_layers=num_mamba_layers) # , state_dict=model[2].state_dict()
+transformer_model, mamba_model = get_model_both(config, device, should_train=True, verbose=0, mamba_autocast=mamba_autocast) # , state_dict=model[2].state_dict()
 
 (transformer_hp_embedding, transformer_data, _), transformer_targets, transformer_single_eval_pos = next(iter(transformer_model[3]))
 (mamba_hp_embedding, mamba_data, _), mamba_targets, mamba_single_eval_pos = next(iter(mamba_model[3]))
