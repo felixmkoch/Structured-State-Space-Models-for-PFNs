@@ -144,6 +144,8 @@ def eval_method(task_type,
                           split_number=split_number, 
                           verbose=verbose, 
                           max_time=max_time)
+        
+
 
         # RESULT IS ONLY USED ONCE IN THIS FOR LOOP!
 
@@ -361,6 +363,9 @@ for max_time in max_times:
     
     if len(global_results_filtered) == 0:
         continue
+
+    print(f"Keys for filtered: {global_results_filtered.keys()}")
+
     '''
     # Calculate ranks and wins per split
     for metric_key in metric_keys:
@@ -369,6 +374,7 @@ for max_time in max_times:
 
             for method in methods:
                 method_ = method+'_time_'+str(max_time)+tabular_baselines.get_scoring_string(metric_used, usage='') if method != 'transformer' else method
+
                 global_results[method_+'_split_'+str(split_number)]['mean_rank_'+metric_key+f'_at_{pos}'] = ranks[method]
                 global_results[method_+'_split_'+str(split_number)]['mean_wins_'+metric_key+f'_at_{pos}'] = wins[method]
     '''
@@ -409,7 +415,6 @@ for max_time in max_times:
                     #    df_ += [{'metric'+ranking+metric_key: global_results[method]['mean_'+ranking+metric_key+f'_at_{pos}'], 'real_time': avg_times[method_], 'time': time, 'method': method_, 'split_number': split_number}]
                     #    df_ += [{'metric'+ranking+metric_key: global_results[method]['mean_'+ranking+metric_key+f'_at_{pos}'], 'real_time': max(avg_times), 'time': max(max_times), 'method': method_, 'split_number': split_number}]
 
-
 df_ = pd.DataFrame(df_)
 
 df_absolute = df_.copy()
@@ -440,8 +445,13 @@ df_absolute = pd.concat([df_absolute, knn_extend], ignore_index=True).reindex()
 
 exclude=['']
 #ax = make_tabular_results_plot('time', exclude=exclude)
+
+
+print(df_absolute.head())
+
+
 ax = make_tabular_results_plot('roc', df_=df_absolute, exclude=exclude, grouping=False, max_times=[1, 5, 30, 60*5, 60*60])
-ax.set_ylim([0.84, 0.9])
+#ax.set_ylim([0.84, 0.9])
 ax.set_xlim([np.log10(0.7), np.log10(3600)])
 ax.legend([],[], frameon=False)
 

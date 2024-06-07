@@ -64,7 +64,9 @@ def train_both_models(priordataloader_class,
           initializer=None, 
           initialize_with_model=None, 
           train_mixed_precision=False, 
-          efficient_eval_masking=True, 
+          efficient_eval_masking=True,
+          enable_autocast=True,
+          num_mamba_layers=1, 
           **model_extra_args
           ):
     device = gpu_device if torch.cuda.is_available() else 'cpu:0'
@@ -128,7 +130,7 @@ def train_both_models(priordataloader_class,
         ninp=emsize,
         nhid=nhid,
         y_encoder=y_encoder_generator(1, emsize),
-        num_layers=2,
+        num_layers=num_mamba_layers,
         device=device,
     )
 
@@ -281,7 +283,9 @@ def train_both_models(priordataloader_class,
                 mamba_time_to_get_batch = time.time() - mamba_before_get_batch
                 mamba_before_forward = time.time()
 
-                with autocast(enabled=mamba_scaler is not None):
+                print(f"Autocast is {enable_autocast}")
+
+                with autocast(enabled=enable_autocast):
                     # If style is set to None, it should not be transferred to device
                     mamba_output = mamba_model(
                         tuple(
