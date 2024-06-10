@@ -376,9 +376,12 @@ def train_both_models(priordataloader_class,
     transformer_total_positional_losses = float('inf')
     mamba_total_positional_losses = float('inf')
     try:
+        cur_epoch = 0
         for epoch in (range(1, epochs + 1) if epochs is not None else itertools.count(1)):
-
+            
             epoch_start_time = time.time()
+            cur_epoch += 1
+            print(f"{epoch_start_time}: Start epoch {cur_epoch}")
 
             transformer_total_loss, \
             transformer_total_positional_losses, \
