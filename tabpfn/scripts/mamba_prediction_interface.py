@@ -89,7 +89,7 @@ def load_model_workflow(i, e, add_name, base_path, device='cpu', eval_addition='
     # Load Custom model temp
     #
 
-    if model_path: model_file = "models_diff/prior_diff_real_checkpointmamba_custom_epoch_2.cpkt"
+    if model_path: model_file = model_path
 
     #
     # End Load Custom Model Temp
