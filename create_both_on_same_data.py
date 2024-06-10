@@ -105,9 +105,17 @@ add_name = "mamba_custom"
 i = 2
 config['epoch_in_training'] = config["epochs"]
 
+# Save Mamba Model
 save_model(mamba_model[2], 
            base_path, 
-           f'models_diff/prior_diff_real_checkpoint{add_name}_epoch_{i}.cpkt',
+           f'models_diff/mamba_custom.cpkt',
+           config
+           )
+
+# Save Transformer Model
+save_model(transformer_model[2], 
+           base_path, 
+           f'models_diff/transformer_custom.cpkt',
            config
            )
 

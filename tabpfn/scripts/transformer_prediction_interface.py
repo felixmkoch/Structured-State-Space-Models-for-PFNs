@@ -119,7 +119,7 @@ class TabPFNClassifier(BaseEstimator, ClassifierMixin):
     def __init__(self, device='cpu', base_path=pathlib.Path(__file__).parent.parent.resolve(), model_string='',
                  N_ensemble_configurations=3, no_preprocess_mode=False, multiclass_decoder='permutation',
                  feature_shift_decoder=True, only_inference=True, seed=0, no_grad=True, batch_size_inference=32,
-                 subsample_features=False):
+                 subsample_features=False, model_path=""):
         """
         Initializes the classifier and loads the model. 
         Depending on the arguments, the model is either loaded from memory, from a file, or downloaded from the 
@@ -155,26 +155,30 @@ class TabPFNClassifier(BaseEstimator, ClassifierMixin):
         """
 
         # Model file specification (Model name, Epoch)
-        i = 0
-        model_key = model_string+'|'+str(device)
-        if model_key in self.models_in_memory:
-            model, c, results_file = self.models_in_memory[model_key]
-        else:
-            # model_file = f'models_diff/prior_diff_real_checkpoint{add_name}_n_{i}_epoch_{e}.cpkt'
-            # i, e, add_name
+        if not model_path:
+            i = 0
+            model_key = model_string+'|'+str(device)
+            if model_key in self.models_in_memory:
+                model, c, results_file = self.models_in_memory[model_key]
+            else:
+                # model_file = f'models_diff/prior_diff_real_checkpoint{add_name}_n_{i}_epoch_{e}.cpkt'
+                # i, e, add_name
 
-            model, c, results_file = load_model_workflow(i,                     # i
-                                                         -1,                    # e
-                                                         add_name=model_string, # add_name 
-                                                         base_path=base_path, 
-                                                         device=device,
-                                                         eval_addition='', 
-                                                         only_inference=only_inference
-                                                         )
-            self.models_in_memory[model_key] = (model, c, results_file)
-            if len(self.models_in_memory) == 2:
-                print('Multiple models in memory. This might lead to memory issues. Consider calling remove_models_from_memory()')
-        #style, temperature = self.load_result_minimal(style_file, i, e)
+                model, c, results_file = load_model_workflow(i,                     # i
+                                                            -1,                    # e
+                                                            add_name=model_string, # add_name 
+                                                            base_path=base_path, 
+                                                            device=device,
+                                                            eval_addition='', 
+                                                            only_inference=only_inference
+                                                            )
+                self.models_in_memory[model_key] = (model, c, results_file)
+                if len(self.models_in_memory) == 2:
+                    print('Multiple models in memory. This might lead to memory issues. Consider calling remove_models_from_memory()')
+            #style, temperature = self.load_result_minimal(style_file, i, e)
+
+        else:
+            model, c, result_file = load_model_workflow(0, -1, add_name="Not relevant", base_path="Not relevant", device=device, only_inference=only_inference, model_path=model_path)
 
         self.device = device
         self.model = model
