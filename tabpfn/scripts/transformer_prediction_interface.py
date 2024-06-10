@@ -177,7 +177,7 @@ class TabPFNClassifier(BaseEstimator, ClassifierMixin):
             #style, temperature = self.load_result_minimal(style_file, i, e)
 
         else:
-            model, c, result_file = load_model_workflow(0, -1, add_name="", base_path=base_path, device=device, only_inference=only_inference, model_path=model_path)
+            model, c, result_file = load_model_workflow(0, -1, add_name="", base_path=base_path, device=device, only_inference=only_inference, model_path_custom=model_path)
 
         self.device = device
         self.model = model

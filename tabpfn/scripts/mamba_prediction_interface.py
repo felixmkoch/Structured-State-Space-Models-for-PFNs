@@ -127,7 +127,7 @@ class MambaPFNClassifier(BaseEstimator, ClassifierMixin):
                  only_inference=True, seed=0, 
                  no_grad=True, batch_size_inference=32,
                  subsample_features=False,
-                 model_path_custom=""
+                 model_path=""
                  ):
         """
         Initializes the classifier and loads the model. 
@@ -164,7 +164,7 @@ class MambaPFNClassifier(BaseEstimator, ClassifierMixin):
         """
 
         # Model file specification (Model name, Epoch)
-        if not model_path_custom:
+        if not model_path:
             i = 0
             model_key = model_string+'|'+str(device)
             if model_key in self.models_in_memory:
@@ -187,7 +187,7 @@ class MambaPFNClassifier(BaseEstimator, ClassifierMixin):
             #style, temperature = self.load_result_minimal(style_file, i, e)
 
         else:
-            model, c, result_file = load_model_workflow(0, -1, add_name="", base_path=base_path, device=device, only_inference=only_inference, model_path_custom=model_path_custom) 
+            model, c, result_file = load_model_workflow(0, -1, add_name="", base_path=base_path, device=device, only_inference=only_inference, model_path_custom=model_path) 
 
         self.device = device
         self.model = model
