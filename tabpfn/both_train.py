@@ -186,7 +186,7 @@ def train_both_models(priordataloader_class,
         
         for batch, (data, targets, single_eval_pos) in enumerate(dl):
 
-            print(f"Currently in batch {batch + 1} out of {len(dl)} batches")
+            #print(f"Currently in batch {batch + 1} out of {len(dl)} batches")
 
             # Others
 
@@ -283,7 +283,7 @@ def train_both_models(priordataloader_class,
                 mamba_time_to_get_batch = time.time() - mamba_before_get_batch
                 mamba_before_forward = time.time()
 
-                print(f"Autocast is {enable_autocast}")
+                #print(f"Autocast is {enable_autocast}")
 
                 with autocast(enabled=enable_autocast):
                     # If style is set to None, it should not be transferred to device
