@@ -348,8 +348,8 @@ class Block(nn.Module):
             )
         hidden_states = self.mixer(hidden_states, inference_params=inference_params)
 
-        print(f"Block return residuial: {residual}")
-        print(f"Block return hidden: {hidden_states}")
+        #print(f"Block return residuial: {residual}")
+        #print(f"Block return hidden: {hidden_states}")
 
         return hidden_states, residual
 
