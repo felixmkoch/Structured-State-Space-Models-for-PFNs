@@ -154,8 +154,8 @@ class TabPFNClassifier(BaseEstimator, ClassifierMixin):
         """
 
         # Model file specification (Model name, Epoch)
+        i = 0
         if not model_path:
-            i = 0
             model_key = model_string+'|'+str(device)
             if model_key in self.models_in_memory:
                 model, c, results_file = self.models_in_memory[model_key]
