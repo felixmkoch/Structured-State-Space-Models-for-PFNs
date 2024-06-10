@@ -38,7 +38,7 @@ class CustomUnpickler(pickle.Unpickler):
         else:
             return super().find_class(module, name)
 
-def load_model_workflow(i, e, add_name, base_path, device='cpu', eval_addition='', only_inference=True, model_path=""):
+def load_model_workflow(i, e, add_name, base_path, device='cpu', eval_addition='', only_inference=True, model_path_custom=""):
     """
     Workflow for loading a model and setting appropriate parameters for diffable hparam tuning.
 
@@ -89,7 +89,7 @@ def load_model_workflow(i, e, add_name, base_path, device='cpu', eval_addition='
     # Load Custom model temp
     #
 
-    if model_path: model_file = model_path
+    if model_path_custom: model_file = model_path_custom
 
     #
     # End Load Custom Model Temp
@@ -127,7 +127,7 @@ class MambaPFNClassifier(BaseEstimator, ClassifierMixin):
                  only_inference=True, seed=0, 
                  no_grad=True, batch_size_inference=32,
                  subsample_features=False,
-                 model_path=""
+                 model_path_custom=""
                  ):
         """
         Initializes the classifier and loads the model. 
@@ -164,7 +164,7 @@ class MambaPFNClassifier(BaseEstimator, ClassifierMixin):
         """
 
         # Model file specification (Model name, Epoch)
-        if not model_path:
+        if not model_path_custom:
             i = 0
             model_key = model_string+'|'+str(device)
             if model_key in self.models_in_memory:
@@ -187,7 +187,7 @@ class MambaPFNClassifier(BaseEstimator, ClassifierMixin):
             #style, temperature = self.load_result_minimal(style_file, i, e)
 
         else:
-            model, c, result_file = load_model_workflow(0, -1, add_name="", base_path=base_path, device=device, only_inference=only_inference, model_path=model_path) 
+            model, c, result_file = load_model_workflow(0, -1, add_name="", base_path=base_path, device=device, only_inference=only_inference, model_path_custom=model_path_custom) 
 
         self.device = device
         self.model = model
