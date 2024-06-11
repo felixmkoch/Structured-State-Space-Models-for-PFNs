@@ -177,9 +177,6 @@ def run_experiment(config, result_processor, custom_fields):
 
 if __name__ == "__main__":
 
-    #with open("expsetup.cnf", "r") as f:
-    #    print(f.read())
-
     # PyExperimenter object
     pyexp = PyExperimenter(experiment_configuration_file_path="expsetup_first.cnf")
 

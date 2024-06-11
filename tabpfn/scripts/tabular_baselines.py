@@ -241,15 +241,21 @@ import torch
 import random
 from tqdm import tqdm
 def transformer_metric(x, y, test_x, test_y, cat_features, metric_used, max_time=300, device='cpu', N_ensemble_configurations=3, classifier=None):
-    from tabpfn.scripts.transformer_prediction_interface import TabPFNClassifier
+    #from tabpfn.scripts.transformer_prediction_interface import TabPFNClassifier
+    from tabpfn import TabPFNClassifier
+
+    device = "cuda" if torch.cuda.is_available() else "cpu"
+
+    N_ensemble_configurations=32
+    #transformer_model_path='models_diff/prior_diff_real_checkpoint_n_0_epoch_42.cpkt'
+    transformer_model_path='models_diff/transformer_custom.cpkt'
 
     if classifier is None:
     # Change default transformer used here:
-        print("In init")
-        classifier = TabPFNClassifier(device=device, N_ensemble_configurations=N_ensemble_configurations, model_path="models_diff/prior_diff_real_checkpoint_n_0_epoch_42.cpkt")
+        classifier = TabPFNClassifier(device=device, N_ensemble_configurations=N_ensemble_configurations, model_path=transformer_model_path)
     
     classifier.fit(x, y)
-    print('Train data shape', x.shape, ' Test data shape', test_x.shape)
+    
     pred = classifier.predict_proba(test_x)
 
     metric = metric_used(test_y, pred)
@@ -258,6 +264,8 @@ def transformer_metric(x, y, test_x, test_y, cat_features, metric_used, max_time
 
 def mamba_metric(x, y, test_x, test_y, cat_features, metric_used, max_time=300, device='cpu', N_ensemble_configurations=3, classifier=None):
     from tabpfn.scripts.mamba_prediction_interface import MambaPFNClassifier
+
+    device = "cuda" if torch.cuda.is_available() else "cpu"
 
     # Chagne default MAMBA model used here:
     if classifier is None: classifier = MambaPFNClassifier(device=device, N_ensemble_configurations=N_ensemble_configurations, model_path="models_diff/mamba_custom_20e.cpkt")

@@ -61,10 +61,9 @@ class TransformerModel(nn.Module):
         self.global_att_embeddings = nn.Embedding(num_global_att_tokens, ninp) if num_global_att_tokens else None
         self.full_attention = full_attention
         self.efficient_eval_masking = efficient_eval_masking
-
         self.n_out = n_out
         self.nhid = nhid
-
+        # Stuck here WHY?!?!?!
         self.init_weights()
 
     def __setstate__(self, state):
@@ -116,6 +115,7 @@ class TransformerModel(nn.Module):
         if self.init_method is not None:
             self.apply(self.init_method)
         for layer in self.transformer_encoder.layers:
+            # Things might get stuck in here; depends on the model :( Idk why
             nn.init.zeros_(layer.linear2.weight)
             nn.init.zeros_(layer.linear2.bias)
             attns = layer.self_attn if isinstance(layer.self_attn, nn.ModuleList) else [layer.self_attn]

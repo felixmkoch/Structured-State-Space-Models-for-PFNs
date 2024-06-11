@@ -79,8 +79,8 @@ config["differentiable_hyperparameters"]["prior_mlp_activations"]["choice_values
 config["num_classes"] = uniform_int_sampler_f(2, config['max_num_classes']) # Wrong Function
 config["num_features_used"] = uniform_int_sampler_f(1, max_features)
 
-config['batch_size'] = 256 # just because we did this in the other config. Would be 64 default
-config['emsize'] = 128 # Default was on 512, just to save some GPU mem.
+config['batch_size'] = 32 # just because we did this in the other config. Would be 64 default
+config['emsize'] = 32 # Default was on 512, just to save some GPU mem.
 config["epochs"] = 1
 
 mamba_autocast = False
