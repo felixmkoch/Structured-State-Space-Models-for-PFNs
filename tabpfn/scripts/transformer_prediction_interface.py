@@ -448,8 +448,8 @@ def transformer_predict(model, eval_xs, eval_ys, eval_position,
                                                normalize_with_sqrt=normalize_with_sqrt)
 
         return eval_xs.to(device)
-
-    eval_xs, eval_ys = eval_xs.to(device), eval_ys.to(device)
+    
+    #eval_xs, eval_ys = eval_xs.to(device), eval_ys.to(device)
     eval_ys = eval_ys[:eval_position]
 
     model.to(device)

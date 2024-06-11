@@ -15,6 +15,7 @@ from tabpfn.utils import normalize_data, torch_nanmean, to_ranking_low_mem, remo
 from tabpfn.scripts.tabular_baselines import get_scoring_string
 from tabpfn.scripts import tabular_metrics
 from tabpfn.scripts.transformer_prediction_interface import *
+from tabpfn.scripts.mamba_prediction_interface import *
 from tabpfn.scripts.baseline_prediction_interface import *
 """
 ===============================
@@ -82,6 +83,7 @@ def eval_model_on_ds(i, e, valid_datasets, eval_positions, bptt, add_name, base_
 def evaluate(datasets, bptt, eval_positions, metric_used, model, device='cpu'
              , verbose=False
              , return_tensor=False
+             , method_name=""
              , **kwargs):
     """
     Evaluates a list of datasets for a model function.
@@ -122,6 +124,7 @@ def evaluate(datasets, bptt, eval_positions, metric_used, model, device='cpu'
                         , eval_position = eval_position_real
                         , metric_used = metric_used
                                   , device=device
+                        , method_name=method_name
                         ,**kwargs)
 
             if r is None:
@@ -226,7 +229,7 @@ def generate_valid_split(X, y, bptt, eval_position, is_classification, split_num
 
 def evaluate_position(X, y, categorical_feats, model, bptt
                       , eval_position, overwrite, save, base_path, path_interfix, method, ds_name, fetch_only=False
-                      , max_time=300, split_number=1, metric_used=None, device='cpu'
+                      , max_time=300, split_number=1, metric_used=None, device='cpu', method_name=""
                       , per_step_normalization=False, **kwargs):
     """
     Evaluates a dataset with a 'bptt' number of training samples.
@@ -268,6 +271,8 @@ def evaluate_position(X, y, categorical_feats, model, bptt
     eval_xs, eval_ys = generate_valid_split(X, y, bptt, eval_position
                                             , is_classification=tabular_metrics.is_classification(metric_used)
                                             , split_number=split_number)
+    
+    
     if eval_xs is None:
         print(f"No dataset could be generated {ds_name} {bptt}")
         return None
@@ -282,18 +287,28 @@ def evaluate_position(X, y, categorical_feats, model, bptt
     start_time = time.time()
 
     if isinstance(model, nn.Module): # Two separate predict interfaces for transformer and baselines
-        outputs, best_configs = transformer_predict(model, eval_xs, eval_ys, eval_position, metric_used=metric_used
-                                                    , categorical_feats=categorical_feats
-                                                    , inference_mode=True
-                                                    , device=device
-                                                    , extend_features=True,
-                                                    **kwargs), None
+        if method_name == "transformer":
+            outputs, best_configs = transformer_predict(model, eval_xs, eval_ys, eval_position, metric_used=metric_used
+                                                            , categorical_feats=categorical_feats
+                                                            , inference_mode=True
+                                                            , device=device
+                                                            , extend_features=True,
+                                                            **kwargs), None
+        if method_name == "mamba":
+            outputs, best_configs = mamba_predict(model, eval_xs, eval_ys, eval_position, metric_used=metric_used
+                                                            , categorical_feats=categorical_feats
+                                                            , inference_mode=True
+                                                            , device=device
+                                                            , extend_features=True,
+                                                            **kwargs), None
     else:
         _, outputs, best_configs = baseline_predict(model, eval_xs, eval_ys, categorical_feats
                                                     , eval_pos=eval_position
                                                     , device=device
                                                     , max_time=max_time, metric_used=metric_used, **kwargs)
     eval_ys = eval_ys[eval_position:]
+
+
     if outputs is None:
         print('Execution failed', ds_name)
         return None
@@ -304,9 +319,10 @@ def evaluate_position(X, y, categorical_feats, model, bptt
 
     ds_result = None, outputs, eval_ys, best_configs, time.time() - start_time
 
-    if save:
-        with open(path, 'wb') as f:
-            np.save(f, ds_result)
-            print(f'saved results to {path}')
+    # Commented out for now - don't want to save.
+    #if save:
+    #    with open(path, 'wb') as f:
+    #        np.save(f, ds_result)
+    #        print(f'saved results to {path}')
 
     return ds_result

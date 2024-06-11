@@ -28,7 +28,7 @@ eval_positions = [1000]
 max_features = 100
 bptt = 2000
 base_path = os.path.join('.')
-overwrite=False
+overwrite=True
 metric_used = tabular_metrics.auc_metric
 task_type = 'multiclass'
 suite="cc"
@@ -43,7 +43,8 @@ clf_dict= {'gp': gp_metric,
            'logistic': logistic_metric, 
            'autosklearn': autosklearn_metric, 
            'autosklearn2': autosklearn2_metric, 
-           'autogluon': autogluon_metric
+           'autogluon': autogluon_metric,
+           'mamba': mamba_metric
            }
 
 metric_renamer = {'roc': 'ROC AUC', 
@@ -114,7 +115,8 @@ def eval_method(task_type,
                           fetch_only=fetch_only, 
                           split_number=split_number, 
                           verbose=verbose, 
-                          max_time=max_time)
+                          max_time=max_time,
+                          method_name=method)
 
         # RESULT IS ONLY USED ONCE IN THIS FOR LOOP!
 
@@ -146,7 +148,7 @@ def run_experiment(config, result_processor, custom_fields):
     max_time = config["max_time"]           # Max time of the experiment.
     split_number = config["split_number"]   # Split number of the dataset.
 
-    acc = eval_method(
+    eval_dict = eval_method(
         task_type=task_type,
         method=method,
         dids=None,
@@ -160,8 +162,10 @@ def run_experiment(config, result_processor, custom_fields):
         verbose=False
     )
 
+    res = eval_dict["mean_metric"] # Tensor with just 1 item in it, the result.
+
     result_processor.process_results({
-        "acc": acc
+        "y": res.item()
     })
 
 
@@ -173,14 +177,14 @@ def run_experiment(config, result_processor, custom_fields):
 
 if __name__ == "__main__":
 
-    with open("expsetup.cnf", "r") as f:
-        print(f.read())
+    #with open("expsetup.cnf", "r") as f:
+    #    print(f.read())
 
     # PyExperimenter object
-    pyexp = PyExperimenter(experiment_configuration_file_path="expsetup.cnf")
+    pyexp = PyExperimenter(experiment_configuration_file_path="expsetup_first.cnf")
 
     max_times = [0.5, 1, 15, 30, 60, 300, 900, 3600]
-    methods = ["transformer", "logistic"]
+    methods = ['transformer', 'mamba']
     selectors = ["test"]
     split_numbers = [1, 2, 3, 4, 5]
 
@@ -196,5 +200,6 @@ if __name__ == "__main__":
 
     print(pyexp.get_table())
 
+    pyexp.execute(run_experiment, max_experiments=1)
 
     print("worked")

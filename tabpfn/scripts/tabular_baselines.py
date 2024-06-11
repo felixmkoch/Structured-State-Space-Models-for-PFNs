@@ -244,9 +244,25 @@ def transformer_metric(x, y, test_x, test_y, cat_features, metric_used, max_time
     from tabpfn.scripts.transformer_prediction_interface import TabPFNClassifier
 
     if classifier is None:
-      classifier = TabPFNClassifier(device=device, N_ensemble_configurations=N_ensemble_configurations)
+    # Change default transformer used here:
+        print("In init")
+        classifier = TabPFNClassifier(device=device, N_ensemble_configurations=N_ensemble_configurations, model_path="models_diff/prior_diff_real_checkpoint_n_0_epoch_42.cpkt")
+    
     classifier.fit(x, y)
     print('Train data shape', x.shape, ' Test data shape', test_x.shape)
+    pred = classifier.predict_proba(test_x)
+
+    metric = metric_used(test_y, pred)
+
+    return metric, pred, None
+
+def mamba_metric(x, y, test_x, test_y, cat_features, metric_used, max_time=300, device='cpu', N_ensemble_configurations=3, classifier=None):
+    from tabpfn.scripts.mamba_prediction_interface import MambaPFNClassifier
+
+    # Chagne default MAMBA model used here:
+    if classifier is None: classifier = MambaPFNClassifier(device=device, N_ensemble_configurations=N_ensemble_configurations, model_path="models_diff/mamba_custom_20e.cpkt")
+
+    classifier.fit(x, y)
     pred = classifier.predict_proba(test_x)
 
     metric = metric_used(test_y, pred)

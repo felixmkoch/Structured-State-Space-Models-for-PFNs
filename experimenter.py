@@ -13,6 +13,7 @@ import os
 #                                       PARAMETERS
 #------------------------------------------------------------------------------------------------
 
+'''
 cc_test_datasets_multiclass, cc_test_datasets_multiclass_df = \
     load_openml_list(
         open_cc_dids, 
@@ -23,7 +24,8 @@ cc_test_datasets_multiclass, cc_test_datasets_multiclass_df = \
         num_feats=100, 
         return_capped=True
         )
-
+'''
+        
 eval_positions = [1000]
 max_features = 100
 bptt = 2000
@@ -180,8 +182,10 @@ if __name__ == "__main__":
     # PyExperimenter object
     pyexp = PyExperimenter(experiment_configuration_file_path="expsetup_first.cnf")
 
-    pyexp.execute(run_experiment, max_experiments=1)
+    #pyexp.execute(run_experiment, max_experiments=1)
 
     print(pyexp.get_table())
+
+    pyexp.get_table().to_csv("res.csv")
 
     print("worked")
