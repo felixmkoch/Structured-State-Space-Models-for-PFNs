@@ -20,6 +20,7 @@ import tabpfn.positional_encodings as positional_encodings
 from tabpfn.utils import init_dist
 from torch.cuda.amp import autocast, GradScaler
 from torch import nn
+from evaluation_helper import EvalHelper
 
 class Losses():
     gaussian = nn.GaussianNLLLoss(full=True, reduction='none')
@@ -66,7 +67,8 @@ def train_both_models(priordataloader_class,
           train_mixed_precision=False, 
           efficient_eval_masking=True,
           enable_autocast=True,
-          num_mamba_layers=1, 
+          num_mamba_layers=1,
+          eval_class:EvalHelper=None, 
           **model_extra_args
           ):
     device = gpu_device if torch.cuda.is_available() else 'cpu:0'
@@ -375,6 +377,7 @@ def train_both_models(priordataloader_class,
     mamba_total_loss = float('inf')
     transformer_total_positional_losses = float('inf')
     mamba_total_positional_losses = float('inf')
+
     try:
         cur_epoch = 0
         for epoch in (range(1, epochs + 1) if epochs is not None else itertools.count(1)):
@@ -398,6 +401,19 @@ def train_both_models(priordataloader_class,
             mamba_nan_share, \
             mamba_ignore_share =\
                 train_epoch()
+            
+            #
+            # Custom evaluation on OpenML dataset
+            #
+            ''' Not yet finished
+            from tabpfn.scripts import tabular_metrics
+            eval_positions = [1000]
+            print("Doing custom evaluation now")
+            transformer_custom_eval_res = eval_class.do_evaluation(transformer_model, bptt, eval_positions, tabular_metrics.auc_metric,"cuda", "transformer")
+            mambe_custom_eval_res = eval_class.do_evaluation(transformer_model, bptt, eval_positions, tabular_metrics.auc_metric,"cuda", "mamba")
+            print("End custom Evaluation")
+            '''
+
             if hasattr(dl, 'validate') and epoch % validation_period == 0:
                 with torch.no_grad():
                     val_score = dl.validate(model)
@@ -410,7 +426,8 @@ def train_both_models(priordataloader_class,
                 print('-' * 89)
                 print(
                     f'| end of epoch {epoch:3d} | time: {(time.time() - epoch_start_time):5.2f}s | mean loss {transformer_total_loss:5.2f} | '
-                    f"pos losses {','.join([f'{l:5.2f}' for l in transformer_total_positional_losses])}, lr {scheduler.get_last_lr()[0]}"
+                    #f"pos losses {','.join([f'{l:5.2f}' for l in transformer_total_positional_losses])}, lr {transformer_scheduler.get_last_lr()[0]}"
+                    f"pos losses: deactivated, lr {transformer_scheduler.get_last_lr()[0]}"
                     f' data time {transformer_time_to_get_batch:5.2f} step time {transformer_step_time:5.2f}'
                     f' forward time {transformer_forward_time:5.2f}' 
                     f' nan share {transformer_nan_share:5.2f} ignore share (for classification tasks) {transformer_ignore_share:5.4f}'
@@ -420,7 +437,8 @@ def train_both_models(priordataloader_class,
                 print('-' * 89)
                 print(
                     f'| end of epoch {epoch:3d} | time: {(time.time() - epoch_start_time):5.2f}s | mean loss {mamba_total_loss:5.2f} | '
-                    f"pos losses {','.join([f'{l:5.2f}' for l in mamba_total_positional_losses])}, lr {scheduler.get_last_lr()[0]}"
+                    #f"pos losses {','.join([f'{l:5.2f}' for l in mamba_total_positional_losses])}, lr {mamba_scheduler.get_last_lr()[0]}"
+                    f"pos losses : deactivated, lr {mamba_scheduler.get_last_lr()[0]}"
                     f' data time {mamba_time_to_get_batch:5.2f} step time {mamba_step_time:5.2f}'
                     f' forward time {mamba_forward_time:5.2f}' 
                     f' nan share {mamba_nan_share:5.2f} ignore share (for classification tasks) {mamba_ignore_share:5.4f}'
