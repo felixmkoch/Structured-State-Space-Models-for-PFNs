@@ -96,7 +96,7 @@ config["mamba_num_layers"] = 2
 #------------------------------------------------------------------------------------------------
 
 # Evaluation during training:
-eval_class = EvalHelper()
+#eval_class = EvalHelper()
 
 # Get the model 
 #model = get_model(config, device, should_train=True, verbose=0) # , state_dict=model[2].state_dict()
