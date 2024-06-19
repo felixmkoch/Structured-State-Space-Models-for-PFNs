@@ -153,7 +153,7 @@ def train_mamba(priordataloader_class,
     dl.model = mamba_model
     optimizer = torch.optim.AdamW(mamba_model.parameters(), lr=lr, weight_decay=weight_decay)
     scheduler = scheduler(optimizer, warmup_epochs, epochs if epochs is not None else 100) # when training for fixed time lr schedule takes 100 steps
-    scaler = GradScaler() if train_mixed_precision else None
+    scaler = GradScaler() if enable_autocast else None
 
     # check that everything uses up-to-date APIs
     utils.check_compatibility(dl)
@@ -194,7 +194,7 @@ def train_mamba(priordataloader_class,
                 else:
                     single_eval_pos = targets.shape[0] - bptt_extra_samples
 
-                with autocast(enabled=(scaler is not None) and enable_autocast):
+                with autocast(enabled=scaler is not None):
                     # If style is set to None, it should not be transferred to device
                     output = mamba_model(
                         tuple(
@@ -211,10 +211,10 @@ def train_mamba(priordataloader_class,
                             for e in data
                             )if isinstance(data, tuple) else data.to(device)
                     
-                    print(f"Input is: {input}")
-                    print("-"*45)
-                    print(f"Output is: {output}")
-                    print("-"*45)
+                    #print(f"Input is: {input}")
+                    #print("-"*45)
+                    #print(f"Output is: {output}")
+                    #print("-"*45)
 
                     forward_time = time.time() - before_forward
 
@@ -238,11 +238,13 @@ def train_mamba(priordataloader_class,
                         losses = criterion(output, targets)
                     losses = losses.view(*output.shape[0:2])
                     print(f"Loss is: {losses}")
-                    time.sleep(10)
+                    #time.sleep(10)
                     loss, nan_share = utils.torch_nanmean(losses.mean(0), return_nanshare=True)
                     loss = loss / aggregate_k_gradients
+                    print(f"Loss afterwards is: {loss}")
 
                 if scaler: loss = scaler.scale(loss)
+                print(f"Loss inverted is: {loss}")
                 loss.backward()
 
                 if batch % aggregate_k_gradients == aggregate_k_gradients - 1:

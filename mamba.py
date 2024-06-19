@@ -91,16 +91,10 @@ class MambaBackbone(nn.Module):
         self.residual_in_fp32 = residual_in_fp32
         self.fused_add_norm = fused_add_norm
 
-        # IMPORTANT TODO: d_model is just there for performance reasons because my GPU is small. In real applicaiton, use ninp.
-        d_model=32
-
-        # Just to save GPU mem for now
-        self.tmp_enc_layer = nn.Linear(ninp, d_model, bias=False, **factory_kwargs)
-
         self.blocks = nn.ModuleList(
             [
                 create_block(
-                    d_model,
+                    ninp,
                     ssm_cfg=ssm_config,
                     norm_epsilon=norm_epsilon,
                     rms_norm=rms_norm,
@@ -113,11 +107,8 @@ class MambaBackbone(nn.Module):
             ]
         )
 
-        # Just to save GPU mem for now
-        self.tmp_dec_layer = nn.Linear(d_model, ninp, bias=False, **factory_kwargs)
-
         self.norm_f = (nn.LayerNorm if not rms_norm else RMSNorm)(
-            d_model, eps=norm_epsilon, **factory_kwargs
+            ninp, eps=norm_epsilon, **factory_kwargs
         )
 
         self.apply(
@@ -134,13 +125,13 @@ class MambaBackbone(nn.Module):
                 inference_parameters
                 ):
             
-        hidden_states = self.tmp_enc_layer(x)
+        hidden_states = x
 
         residual = None
 
         for block in self.blocks: hidden_states, residual = block(hidden_states, residual, inference_params=inference_parameters)
 
-        return self.tmp_dec_layer(hidden_states)
+        return hidden_states
 
 
 class MambaModel(nn.Module):

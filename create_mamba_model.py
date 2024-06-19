@@ -70,11 +70,11 @@ config["num_classes"] = uniform_int_sampler_f(2, config['max_num_classes']) # Wr
 config["num_features_used"] = uniform_int_sampler_f(1, max_features)
 
 config['batch_size'] = 64 # just because we did this in the other config. Would be 64 default
-config['emsize'] = 128 # Default was on 512, just to save some GPU mem.
+config['emsize'] = 512 # Default was on 512, just to save some GPU mem.
 config["epochs"] = 10
 
 mamba_autocast = False
-config["mamba_num_layers"] = 2
+config["mamba_num_layers"] = 16
 
 #------------------------------------------------------------------------------------------------
 #                                         END CONFIG
