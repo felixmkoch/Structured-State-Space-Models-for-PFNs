@@ -81,7 +81,9 @@ def train_mamba(priordataloader_class,
           epoch_callback=None,
           initializer=None, 
           initialize_with_model=None, 
-          train_mixed_precision=False, 
+          train_mixed_precision=False,
+          enable_autocast=True,
+          num_mamba_layers=2, 
           **model_extra_args
           ):
     
@@ -125,7 +127,7 @@ def train_mamba(priordataloader_class,
         ninp=emsize,
         nhid=nhid,
         y_encoder=y_encoder_generator(1, emsize),
-        num_layers=2,
+        num_layers=num_mamba_layers,
         device=device,
     )
     
@@ -192,7 +194,7 @@ def train_mamba(priordataloader_class,
                 else:
                     single_eval_pos = targets.shape[0] - bptt_extra_samples
 
-                with autocast(enabled=scaler is not None):
+                with autocast(enabled=(scaler is not None) and enable_autocast):
                     # If style is set to None, it should not be transferred to device
                     output = mamba_model(
                         tuple(
@@ -203,6 +205,16 @@ def train_mamba(priordataloader_class,
 
                         else data.to(device), 
                         single_eval_pos=single_eval_pos)
+                    
+                    input = tuple(
+                            e.to(device) if torch.is_tensor(e) else e 
+                            for e in data
+                            )if isinstance(data, tuple) else data.to(device)
+                    
+                    print(f"Input is: {input}")
+                    print("-"*45)
+                    print(f"Output is: {output}")
+                    print("-"*45)
 
                     forward_time = time.time() - before_forward
 
@@ -225,6 +237,8 @@ def train_mamba(priordataloader_class,
                     else:
                         losses = criterion(output, targets)
                     losses = losses.view(*output.shape[0:2])
+                    print(f"Loss is: {losses}")
+                    time.sleep(10)
                     loss, nan_share = utils.torch_nanmean(losses.mean(0), return_nanshare=True)
                     loss = loss / aggregate_k_gradients
 
