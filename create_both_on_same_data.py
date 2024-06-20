@@ -82,7 +82,7 @@ config["num_features_used"] = uniform_int_sampler_f(1, max_features)
 
 config['batch_size'] = 32 # just because we did this in the other config. Would be 64 default
 config['emsize'] = 32 # Default was on 512, just to save some GPU mem.
-config["epochs"] = 1
+config["epochs"] = 10
 
 mamba_autocast = False
 config["mamba_num_layers"] = 2

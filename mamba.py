@@ -176,7 +176,7 @@ class MambaModel(nn.Module):
             num_layers=self.num_layers,
             ssm_config=self.ssm_config,
             norm_epsilon=1e-5,
-            rms_norm=False,
+            rms_norm=False,     # Doesn't work with true yet.
             initializer_cfg=self.initializer_config,
             fused_add_norm=self.fused_add_norm,
             residual_in_fp32=self.residual_in_fp32,
@@ -213,11 +213,15 @@ class MambaModel(nn.Module):
 
         hidden_states = self.mamba_backbone(x_src, inference_parameters=None)
 
-        print(f"Hidden States before decoder: {hidden_states}")
+        #print(f"Hidden States before decoder: {hidden_states}")
 
         output = self.decoder(hidden_states)
         
-        print(f"Hidden States after decoder: {output}")
+        #print(f"Hidden States after decoder: {output}")
+
+        #output = output + 0.5
+
+        #print(f"Hidden States after Add operation: {output}")
 
         if not style_src: style_src = [] # To overcome the NoneType has no len() error.
 

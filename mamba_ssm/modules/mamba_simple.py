@@ -346,7 +346,8 @@ class Block(nn.Module):
                 residual_in_fp32=self.residual_in_fp32,
                 eps=self.norm.eps,
             )
-        hidden_states = self.mixer(hidden_states, inference_params=inference_params)
+        #print(f"Block return hidden state before: {hidden_states}")
+        #hidden_states = self.mixer(hidden_states, inference_params=inference_params)
 
         #print(f"Block return residuial: {residual}")
         #print(f"Block return hidden: {hidden_states}")

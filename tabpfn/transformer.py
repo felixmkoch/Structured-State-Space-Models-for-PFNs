@@ -171,6 +171,8 @@ class TransformerModel(nn.Module):
         output = self.transformer_encoder(src, src_mask)
 
         output = self.decoder(output)
+
+        print(f"Output transformer: {output}")
         return output[single_eval_pos+len(style_src)+(self.global_att_embeddings.num_embeddings if self.global_att_embeddings else 0):]
 
     @torch.no_grad()

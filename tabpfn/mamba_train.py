@@ -232,12 +232,11 @@ def train_mamba(priordataloader_class,
                     elif isinstance(criterion, nn.CrossEntropyLoss):
                         # Original: losses = criterion(output.reshape(-1, n_out), targets.to(device).long().flatten())
                         # Done with single_eval_pos -> TODO
-                        # Also Long did note work.
                         losses = criterion(output.reshape(-1, n_out), targets.to(device).long().flatten())
                     else:
                         losses = criterion(output, targets)
                     losses = losses.view(*output.shape[0:2])
-                    print(f"Loss is: {losses}")
+                    #print(f"Loss is: {losses}")
                     #time.sleep(10)
                     loss, nan_share = utils.torch_nanmean(losses.mean(0), return_nanshare=True)
                     loss = loss / aggregate_k_gradients

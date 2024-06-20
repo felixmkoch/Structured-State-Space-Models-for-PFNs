@@ -243,6 +243,9 @@ def train_both_models(priordataloader_class,
 
                 if transformer_scaler: transformer_loss = transformer_scaler.scale(transformer_loss)
 
+                #print(f"Transofrmer Losses: {transformer_losses}" )
+                #print(f"Transofrmer Loss: {transformer_loss}" )
+
                 transformer_loss.backward()
 
                 if batch % aggregate_k_gradients == aggregate_k_gradients - 1:
