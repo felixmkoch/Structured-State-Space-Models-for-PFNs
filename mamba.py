@@ -213,7 +213,11 @@ class MambaModel(nn.Module):
 
         hidden_states = self.mamba_backbone(x_src, inference_parameters=None)
 
+        print(f"Hidden States before decoder: {hidden_states}")
+
         output = self.decoder(hidden_states)
+        
+        print(f"Hidden States after decoder: {output}")
 
         if not style_src: style_src = [] # To overcome the NoneType has no len() error.
 
