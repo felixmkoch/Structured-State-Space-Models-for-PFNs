@@ -153,7 +153,7 @@ def train_both_models(priordataloader_class,
     transformer_optimizer = torch.optim.AdamW(transformer_model.parameters(), lr=lr, weight_decay=weight_decay)
     transformer_scheduler = scheduler(transformer_optimizer, warmup_epochs, epochs if epochs is not None else 100) # when training for fixed time lr schedule takes 100 steps
 
-    mamba_optimizer = torch.optim.AdamW(transformer_model.parameters(), lr=lr, weight_decay=weight_decay)
+    mamba_optimizer = torch.optim.AdamW(mamba_model.parameters(), lr=lr, weight_decay=weight_decay)
     mamba_scheduler = scheduler(mamba_optimizer, warmup_epochs, epochs if epochs is not None else 100) # when training for fixed time lr schedule takes 100 steps
 
     transformer_scaler = GradScaler() if train_mixed_precision else None
