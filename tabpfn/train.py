@@ -19,6 +19,7 @@ import tabpfn.positional_encodings as positional_encodings
 from tabpfn.utils import init_dist
 from torch.cuda.amp import autocast, GradScaler
 from torch import nn
+import wandb
 
 class Losses():
     gaussian = nn.GaussianNLLLoss(full=True, reduction='none')
@@ -227,6 +228,9 @@ def train(priordataloader_class,
 
     total_loss = float('inf')
     total_positional_losses = float('inf')
+
+
+
     try:
         for epoch in (range(1, epochs + 1) if epochs is not None else itertools.count(1)):
 
@@ -249,6 +253,12 @@ def train(priordataloader_class,
                     f' nan share {nan_share:5.2f} ignore share (for classification tasks) {ignore_share:5.4f}'
                     + (f'val score {val_score}' if val_score is not None else ''))
                 print('-' * 89)
+
+            #
+            # Wandb Logging
+            #
+
+            wandb.log({"train/transformer_loss": total_loss})
 
             # stepping with wallclock time based scheduler
             if epoch_callback is not None and rank == 0:

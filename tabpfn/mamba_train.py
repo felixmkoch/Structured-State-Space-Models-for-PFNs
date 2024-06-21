@@ -9,6 +9,7 @@ import time
 import datetime
 import yaml
 from contextlib import nullcontext
+import wandb
 
 
 import torch
@@ -322,6 +323,12 @@ def train_mamba(priordataloader_class,
                 print('-' * 89)
                 
             print("------------------ EPOCH END ----------------------")
+
+            #
+            # Wandb Logging
+            #
+
+            wandb.log({"train/mamba_loss": total_loss})
 
             # stepping with wallclock time based scheduler
             #if epoch_callback is not None and rank == 0:

@@ -36,3 +36,5 @@ rm -rf tmp
 pip install -r requirements.txt
 
 pip install py_experimenter==1.1.0
+
+pip install wandb
