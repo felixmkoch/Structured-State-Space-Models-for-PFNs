@@ -180,7 +180,7 @@ def train_mamba(priordataloader_class,
         
         for batch, (data, targets, single_eval_pos) in enumerate(dl):
 
-            print(f"Currently in batch {batch + 1} out of {len(dl)} batches")
+            #print(f"Currently in batch {batch + 1} out of {len(dl)} batches")
             
             if using_dist and not (batch % aggregate_k_gradients == aggregate_k_gradients - 1):
                 cm = mamba_model.no_sync()
@@ -240,10 +240,10 @@ def train_mamba(priordataloader_class,
                     #time.sleep(10)
                     loss, nan_share = utils.torch_nanmean(losses.mean(0), return_nanshare=True)
                     loss = loss / aggregate_k_gradients
-                    print(f"Loss afterwards is: {loss}")
+                    #print(f"Loss afterwards is: {loss}")
 
                 if scaler: loss = scaler.scale(loss)
-                print(f"Loss inverted is: {loss}")
+                #print(f"Loss inverted is: {loss}")
                 loss.backward()
 
                 if batch % aggregate_k_gradients == aggregate_k_gradients - 1:
