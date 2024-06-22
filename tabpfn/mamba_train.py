@@ -26,6 +26,8 @@ from tabpfn.utils import init_dist
 from torch.cuda.amp import autocast, GradScaler
 from torch import nn
 
+from tabpfn.scripts import tabular_metrics
+
 #------------------------------------------------------------------------------------------------
 #                                    END IMPORTS
 #------------------------------------------------------------------------------------------------
@@ -84,7 +86,8 @@ def train_mamba(priordataloader_class,
           initialize_with_model=None, 
           train_mixed_precision=False,
           enable_autocast=True,
-          num_mamba_layers=2, 
+          num_mamba_layers=2,
+          evaluation_class=None, 
           **model_extra_args
           ):
     
@@ -315,7 +318,8 @@ def train_mamba(priordataloader_class,
                 print('-' * 89)
                 print(
                     f'| end of epoch {epoch:3d} | time: {(time.time() - epoch_start_time):5.2f}s | mean loss {total_loss:5.2f} | '
-                    f"pos losses {','.join([f'{l:5.2f}' for l in total_positional_losses])}, lr {scheduler.get_last_lr()[0]}"
+                    #f"pos losses {','.join([f'{l:5.2f}' for l in total_positional_losses])}, lr {scheduler.get_last_lr()[0]}"
+                    f"lr {scheduler.get_last_lr()[0]}"
                     f' data time {time_to_get_batch:5.2f} step time {step_time:5.2f}'
                     f' forward time {forward_time:5.2f}' 
                     f' nan share {nan_share:5.2f} ignore share (for classification tasks) {ignore_share:5.4f}'
@@ -329,6 +333,19 @@ def train_mamba(priordataloader_class,
             #
 
             wandb.log({"train/mamba_loss": total_loss})
+
+            # Do other evaluations as well.
+            if evaluation_class:
+                metric_used = tabular_metrics.auc_metric
+                eval_positions = [1000]
+                eval_result = evaluation_class.do_evaluation(model=mamba_model, 
+                                                             bptt=bptt,
+                                                             eval_positions=eval_positions,
+                                                             metric=metric_used, 
+                                                             device="cuda", 
+                                                             method_name="mamba")
+                
+                wandb.log({"test/transformer_mean_acc": eval_result})
 
             # stepping with wallclock time based scheduler
             #if epoch_callback is not None and rank == 0:

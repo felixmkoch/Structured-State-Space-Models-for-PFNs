@@ -349,8 +349,9 @@ def get_model_mamba(config, device, should_train=True, verbose=False, state_dict
                   , lr=config['lr']
                   , enable_autocast=mamba_autocast
                   , num_mamba_layers=config['mamba_num_layers']
-                  , verbose=verbose_train,
-                  weight_decay=config.get('weight_decay', 0.0)
+                  , verbose=verbose_train
+                  , evaluation_class=evaluation_class
+                  , weight_decay=config.get('weight_decay', 0.0)
             )
 
     #------------------------------------------------------------------------------------------------
