@@ -263,7 +263,8 @@ def train(priordataloader_class,
             # Wandb Logging
             #
 
-            wandb.log({"train/transformer_loss": total_loss})
+            wandb_dict = {}
+            wandb_dict["train/transformer_loss"] = total_loss
 
             # Do other evaluations as well.
             if evaluation_class:
@@ -277,8 +278,9 @@ def train(priordataloader_class,
                                                              method_name="transformer")
                 
                 #print(f"Evaluation Results on the Transformer Evaluation: {eval_result}")
-                wandb.log({"test/transformer_mean_acc": eval_result})
+                wandb_dict["test/transformer_mean_acc"] = eval_result
 
+            wandb.log(wandb_dict)
 
             # stepping with wallclock time based scheduler
             if epoch_callback is not None and rank == 0:

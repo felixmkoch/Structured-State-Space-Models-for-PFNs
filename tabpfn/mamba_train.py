@@ -331,8 +331,8 @@ def train_mamba(priordataloader_class,
             #
             # Wandb Logging
             #
-
-            wandb.log({"train/mamba_loss": total_loss})
+            wandb_dict = {}
+            wandb_dict["train/mamba_loss"] = total_loss
 
             # Do other evaluations as well.
             if evaluation_class:
@@ -345,7 +345,9 @@ def train_mamba(priordataloader_class,
                                                              device="cuda", 
                                                              method_name="mamba")
                 
-                wandb.log({"test/transformer_mean_acc": eval_result})
+                wandb_dict["test/transformer_mean_acc"] = eval_result
+
+            wandb.log(wandb_dict)
 
             # stepping with wallclock time based scheduler
             #if epoch_callback is not None and rank == 0:
