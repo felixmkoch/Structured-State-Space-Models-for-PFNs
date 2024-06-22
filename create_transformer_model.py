@@ -110,11 +110,11 @@ wandb_run = wandb.init(project=wandb_project,job_type=wandb_job_type,config=wand
 #------------------------------------------------------------------------------------------------
 
 # Evaluation during training:
-#eval_class = EvalHelper()
+eval_class = EvalHelper()
 
 # Get the model 
 #model = get_model(config, device, should_train=True, verbose=0) # , state_dict=model[2].state_dict()
-transformer_model = get_model(config, device, should_train=True, verbose=1)#, evaluation_class=eval_class) # , state_dict=model[2].state_dict()
+transformer_model = get_model(config, device, should_train=True, verbose=1, evaluation_class = eval_class)# , state_dict=model[2].state_dict()
 
 (transformer_hp_embedding, transformer_data, _), transformer_targets, transformer_single_eval_pos = next(iter(transformer_model[3]))
 

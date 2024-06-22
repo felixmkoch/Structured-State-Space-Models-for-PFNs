@@ -117,7 +117,7 @@ def evaluate(datasets, bptt, eval_positions, metric_used, model, device='cpu'
             eval_position_bptt = int(eval_position_real * 2.0)
 
             r = evaluate_position(X, y, model=model
-                        , num_classes=len(torch.unique(y))
+                        , num_classes=len(torch.unique(y)) # Add: y[2]; before: y
                         , categorical_feats = categorical_feats
                         , bptt = eval_position_bptt
                         , ds_name=ds_name
@@ -125,6 +125,12 @@ def evaluate(datasets, bptt, eval_positions, metric_used, model, device='cpu'
                         , metric_used = metric_used
                                   , device=device
                         , method_name=method_name
+                        # Added those because they were wimply missing.
+                        , overwrite=True
+                        , save=False
+                        , base_path=""
+                        , path_interfix=""
+                        , method=""
                         ,**kwargs)
 
             if r is None:
@@ -288,7 +294,6 @@ def evaluate_position(X, y, categorical_feats, model, bptt
 
     if isinstance(model, nn.Module): # Two separate predict interfaces for transformer and baselines
         if method_name == "transformer":
-            print("Prdicting with tranformer")
             outputs, best_configs = transformer_predict(model, eval_xs, eval_ys, eval_position, metric_used=metric_used
                                                             , categorical_feats=categorical_feats
                                                             , inference_mode=True
@@ -296,7 +301,6 @@ def evaluate_position(X, y, categorical_feats, model, bptt
                                                             , extend_features=True,
                                                             **kwargs), None
         if method_name == "mamba":
-            print("Prdicting with mamba")
             outputs, best_configs = mamba_predict(model, eval_xs, eval_ys, eval_position, metric_used=metric_used
                                                             , categorical_feats=categorical_feats
                                                             , inference_mode=True
@@ -304,7 +308,6 @@ def evaluate_position(X, y, categorical_feats, model, bptt
                                                             , extend_features=True,
                                                             **kwargs), None
     else:
-        print("Predicting with baseline")
         _, outputs, best_configs = baseline_predict(model, eval_xs, eval_ys, categorical_feats
                                                     , eval_pos=eval_position
                                                     , device=device

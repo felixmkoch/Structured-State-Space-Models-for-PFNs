@@ -194,7 +194,8 @@ def get_model(config,
               should_train=True, 
               verbose=False, 
               state_dict=None, 
-              epoch_callback=None
+              epoch_callback=None,
+              evaluation_class = None
               ):
     
     import tabpfn.priors as priors
@@ -325,7 +326,8 @@ def get_model(config,
             , **extra_kwargs
         }
                   , lr=config['lr']
-                  , verbose=verbose_train,
-                  weight_decay=config.get('weight_decay', 0.0))
+                  , verbose=verbose_train
+                  , evaluation_class = evaluation_class
+                  , weight_decay=config.get('weight_decay', 0.0))
 
     return model
