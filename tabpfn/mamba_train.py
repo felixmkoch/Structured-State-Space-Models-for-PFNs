@@ -345,7 +345,7 @@ def train_mamba(priordataloader_class,
                                                              device="cuda", 
                                                              method_name="mamba")
                 
-                wandb_dict["test/transformer_mean_acc"] = eval_result
+                wandb_dict["test/mamba_mean_acc"] = eval_result
 
             wandb.log(wandb_dict)
 
