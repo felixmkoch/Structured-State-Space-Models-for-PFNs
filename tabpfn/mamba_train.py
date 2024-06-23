@@ -303,7 +303,7 @@ def train_mamba(priordataloader_class,
     try:
         for epoch in (range(1, epochs + 1) if epochs is not None else itertools.count(1)):
             
-            print("----------------- EPOCH START ---------------------")
+            #print("----------------- EPOCH START ---------------------")
 
             epoch_start_time = time.time()
             total_loss, total_positional_losses, time_to_get_batch, forward_time, step_time, nan_share, ignore_share =\
@@ -326,7 +326,7 @@ def train_mamba(priordataloader_class,
                     + (f'val score {val_score}' if val_score is not None else ''))
                 print('-' * 89)
                 
-            print("------------------ EPOCH END ----------------------")
+            #print("------------------ EPOCH END ----------------------")
 
             #
             # Wandb Logging
@@ -345,7 +345,7 @@ def train_mamba(priordataloader_class,
                                                              device="cuda", 
                                                              method_name="mamba")
                 
-                wandb_dict["test/transformer_mean_acc"] = eval_result
+                wandb_dict["test/mamba_mean_acc"] = eval_result
 
             wandb.log(wandb_dict)
 
