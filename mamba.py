@@ -264,21 +264,17 @@ class MambaModel(nn.Module):
 
         style_src, x_src, y_src = src               # Split input into style, train (x) and test (y) part.
 
+        if not style_src: style_src = torch.tensor([]).to(self.device) # To overcome the NoneType has no len() error.
+
         x_src = self.encoder(x_src)
         y_src = self.y_encoder(y_src.unsqueeze(-1) if len(y_src.shape) < len(x_src.shape) else y_src)
 
-        hidden_states = self.mamba_backbone(x_src, inference_parameters=None)
+        train_x = x_src[:single_eval_pos] + y_src[:single_eval_pos]
 
-        #print(f"Hidden States before decoder: {hidden_states}")
+        src = torch.cat([style_src, train_x, x_src[single_eval_pos:]], 0)
+
+        hidden_states = self.mamba_backbone(src, inference_parameters=None)
 
         output = self.decoder(hidden_states)
-        
-        #print(f"Hidden States after decoder: {output}")
-
-        #output = output + 0.5
-
-        #print(f"Hidden States after Add operation: {output}")
-
-        if not style_src: style_src = [] # To overcome the NoneType has no len() error.
 
         return output[single_eval_pos+len(style_src):]
