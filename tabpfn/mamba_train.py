@@ -210,14 +210,11 @@ def train_mamba(priordataloader_class,
                         else data.to(device), 
                         single_eval_pos=single_eval_pos)
                     
-                    input = tuple(
-                            e.to(device) if torch.is_tensor(e) else e 
-                            for e in data
-                            )if isinstance(data, tuple) else data.to(device)
-                    
                     #print(f"Input is: {input}")
                     #print("-"*45)
                     #print(f"Output is: {output}")
+                    #print(f"Output flattened: {output.flatten()}")
+                    #print(f"Targets flattened: {targets.to(device).flatten()}")
                     #print("-"*45)
 
                     forward_time = time.time() - before_forward
@@ -273,6 +270,9 @@ def train_mamba(priordataloader_class,
 
                     total_positional_losses_recorded += torch.ones(bptt) if single_eval_pos is None else \
                         nn.functional.one_hot(torch.tensor(single_eval_pos), bptt)
+                    
+                    #print(f"Total Positional Losses: {total_positional_losses}")
+                    #print(f"Total Positional Losses Recorded: {total_positional_losses_recorded}")
                 nan_steps += nan_share
                 ignore_steps += (targets == -100).float().mean()
 
@@ -333,6 +333,8 @@ def train_mamba(priordataloader_class,
             #
             wandb_dict = {}
             wandb_dict["train/mamba_loss"] = total_loss
+            wandb_dict["extras/nan_share"] = nan_share
+            
 
             # Do other evaluations as well.
             if evaluation_class:
