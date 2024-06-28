@@ -101,7 +101,7 @@ def _init_weights(
                     p /= math.sqrt(n_residuals_per_layer * n_layer)
 
 
-class MambaBackbone(nn.Module):
+class Mamba2Backbone(nn.Module):
     '''
     Backbone blocks of the MAMBA Model.
     '''
@@ -114,10 +114,10 @@ class MambaBackbone(nn.Module):
                 initializer_cfg=None,
                 fused_add_norm=False,
                 residual_in_fp32=False,
+                attn_layer_idx=None,
+                attn_cfg=None,
                 device=None,
                 dtype=None,
-                attn_layer_idx=[],
-                attn_config={},
                 d_intermediate=0
                 ):
         
@@ -133,7 +133,7 @@ class MambaBackbone(nn.Module):
                     d_intermediate=d_intermediate,
                     ssm_cfg=ssm_config,
                     attn_layer_idx=attn_layer_idx,
-                    attn_cfg=attn_config,
+                    attn_cfg=attn_cfg,
                     norm_epsilon=norm_epsilon,
                     rms_norm=rms_norm,
                     residual_in_fp32=residual_in_fp32,
@@ -189,7 +189,7 @@ class MambaBackbone(nn.Module):
         return hidden_states
 
 
-class MambaModel(nn.Module):
+class Mamba2Model(nn.Module):
     '''
     Actual full MAMBA Model used.
     '''
@@ -207,6 +207,8 @@ class MambaModel(nn.Module):
                  initializer_config = None,
                  fused_add_norm = False,
                  residual_in_fp32 = False,
+                 attn_layer_idx = None,         # Layer indices of the attention layers (List)
+                 attn_cfg = None,               # Config of the Attention layers (dict)
                  device = "cpu",
                  dtype=None
                  ) -> None:
@@ -218,7 +220,7 @@ class MambaModel(nn.Module):
         self.device = device
         self.dtype = dtype
         self.ssm_config = ssm_config
-        self.ssm_config = {"layer": "Mamba1"}       # Specify the mamba version used
+        self.ssm_config = {"layer": "Mamba2"}               # Specify the mamba version used
         self.rms_norm = rms_norm
         self.y_encoder = y_encoder
         self.initializer_config = initializer_config
@@ -227,7 +229,7 @@ class MambaModel(nn.Module):
 
         factory_kwargs = {"device": device, "dtype": dtype}
 
-        self.mamba_backbone = MambaBackbone(
+        self.mamba_backbone = Mamba2Backbone(
             ninp=ninp,
             num_layers=self.num_layers,
             ssm_config=self.ssm_config,
@@ -236,6 +238,8 @@ class MambaModel(nn.Module):
             initializer_cfg=self.initializer_config,
             fused_add_norm=self.fused_add_norm,
             residual_in_fp32=self.residual_in_fp32,
+            attn_layer_idx=attn_layer_idx,
+            attn_cfg=attn_cfg,
             device=self.device,
             dtype=self.dtype
         )
