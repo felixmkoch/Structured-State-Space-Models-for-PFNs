@@ -116,6 +116,7 @@ def train_mamba(priordataloader_class,
     )
 
     # Encoder
+    print(f"Number of Dataloader Features: {dl.num_features}")
     encoder = encoder_generator(dl.num_features, emsize)
     if isinstance(criterion, nn.GaussianNLLLoss): n_out = 2
     elif isinstance(criterion, nn.CrossEntropyLoss): n_out = criterion.weight.shape[0]
@@ -124,6 +125,8 @@ def train_mamba(priordataloader_class,
     #
     # MAMBA Model
     #
+
+    print(f"Emsize: {emsize}")
 
     mamba_model = MambaModel(
         encoder=encoder,
@@ -209,15 +212,11 @@ def train_mamba(priordataloader_class,
 
                         else data.to(device), 
                         single_eval_pos=single_eval_pos)
-                    
-                    #print(f"Input is: {input}")
-                    #print("-"*45)
-                    #print(f"Output is: {output}")
-                    #print(f"Output flattened: {output.flatten()}")
-                    #print(f"Targets flattened: {targets.to(device).flatten()}")
-                    #print("-"*45)
 
                     forward_time = time.time() - before_forward
+
+                    print(f"Out shape: {output.size()}")
+                    print(f"Targets shape: {targets.size()}")
 
                     if single_eval_pos is not None:
                         targets = targets[single_eval_pos:]

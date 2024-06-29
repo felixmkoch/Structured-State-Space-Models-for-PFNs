@@ -7,13 +7,12 @@ import time
 from contextlib import nullcontext
 import wandb
 
-from s4 import S4Model
+from s4_model import S4Model_Wrap
 
 import torch
 from torch import nn
 
 import tabpfn.utils as utils
-from mamba import MambaModel
 from tabpfn.utils import get_cosine_schedule_with_warmup, get_weighted_single_eval_pos_sampler, get_uniform_single_eval_pos_sampler
 import tabpfn.priors as priors
 import tabpfn.encoders as encoders
@@ -121,7 +120,7 @@ def train_s4(priordataloader_class,
     # MAMBA Model
     #
 
-    s4_model = S4Model(
+    s4_model = S4Model_Wrap(
         encoder=encoder,
         n_out=n_out,
         ninp=emsize,

@@ -18,7 +18,7 @@ import wandb
 
 import matplotlib.pyplot as plt
 from tabpfn.scripts.model_builder import get_model, save_model
-from tabpfn.scripts.model_builder_mamba2 import get_model_mamba2 
+from tabpfn.scripts.model_builder_s4 import get_model_s4
 from tabpfn.scripts.model_configs import *
 
 from tabpfn.priors.utils import plot_features
@@ -108,7 +108,7 @@ eval_class = EvalHelper()
 
 # Get the model 
 #model = get_model(config, device, should_train=True, verbose=0) # , state_dict=model[2].state_dict()
-mamba_model = get_model_mamba2(config, device, should_train=True, verbose=1, mamba_autocast=config["mamba_autocast"], evaluation_class=eval_class) # , state_dict=model[2].state_dict()
+mamba_model = get_model_s4(config, device, should_train=True, verbose=1, s4_autocast=config["s4_autocast"], evaluation_class=eval_class) # , state_dict=model[2].state_dict()
 
 (hp_embedding, data, _), targets, single_eval_pos = next(iter(mamba_model[3]))
 

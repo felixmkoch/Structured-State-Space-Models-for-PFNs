@@ -1,7 +1,7 @@
 from functools import partial
 import tabpfn.encoders as encoders
 
-from s4 import S4Model
+from s4_model import S4Model
 from tabpfn.utils import get_uniform_single_eval_pos_sampler
 import torch
 import math

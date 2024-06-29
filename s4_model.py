@@ -88,7 +88,7 @@ class S4Model(nn.Module):
         """
         Input x is shape (B, L, d_input)
         """
-        x = self.encoder(x)  # (B, L, d_input) -> (B, L, d_model)
+        x = self.encoder(x)  # (B, L, d_input) -> (B, L, d_model)   # Don't need encoder as it is encoded before.
 
         x = x.transpose(-1, -2)  # (B, L, d_model) -> (B, d_model, L)
         for layer, norm, dropout in zip(self.s4_layers, self.norms, self.dropouts):
@@ -200,7 +200,15 @@ class S4Model_Wrap(nn.Module):
 
         src = torch.cat([style_src, train_x, x_src[single_eval_pos:]], 0)
 
-        hidden_states = self.mamba_backbone(src, inference_parameters=None)
+        # Shape here: [bptt, feat, batch_size]
+        src = src.permute(2, 0, 1)
+        # Shape here: [batch_size, bptt, feat]
+
+        print(f"Before: {src.shape}")
+
+        hidden_states = self.s4_backbone(src)
+
+        print(hidden_states.size())
 
         output = self.decoder(hidden_states)
 

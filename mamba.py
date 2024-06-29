@@ -273,8 +273,47 @@ class MambaModel(nn.Module):
 
         src = torch.cat([style_src, train_x, x_src[single_eval_pos:]], 0)
 
+        # Before: BPTT, (batch_size / aggregate_k_gradients), emsize
+        src = src.permute(1, 0, 2)
+        # After: (batch_size / aggregate_k_gradients), BPTT, emsize
+
         hidden_states = self.mamba_backbone(src, inference_parameters=None)
+
+        # Before: (batch_size / aggregate_k_gradients), BPTT, emsize
+        hidden_states = hidden_states.permute(1, 0, 2)
+        # After: BPTT, (batch_size / aggregate_k_gradients), emsize
 
         output = self.decoder(hidden_states)
 
         return output[single_eval_pos+len(style_src):]
+    
+
+    ''' OLD MATRIX STRUCTURE
+    def forward(self,
+                src: tuple,  # Inputs (src) have to be given as (x,y) or (style,x,y) tuple'
+                single_eval_pos: int
+                ):
+        
+        if len(src) == 2: src = (None,) + src       # Check whether a style was given
+
+        style_src, x_src, y_src = src               # Split input into style, train (x) and test (y) part.
+
+        if not style_src: style_src = torch.tensor([]).to(self.device) # To overcome the NoneType has no len() error.
+
+        x_src = self.encoder(x_src)
+        y_src = self.y_encoder(y_src.unsqueeze(-1) if len(y_src.shape) < len(x_src.shape) else y_src)
+
+        train_x = x_src[:single_eval_pos] + y_src[:single_eval_pos]
+
+        src = torch.cat([style_src, train_x, x_src[single_eval_pos:]], 0)
+
+        print(f"Before: {src.size()}")
+
+        hidden_states = self.mamba_backbone(src, inference_parameters=None)
+
+        print(hidden_states.size())
+
+        output = self.decoder(hidden_states)
+
+        return output[single_eval_pos+len(style_src):]
+    '''
