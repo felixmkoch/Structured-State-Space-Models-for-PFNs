@@ -8,6 +8,7 @@ from mamba_ssm.modules.mamba2 import Mamba2
 from mamba_ssm.modules.block import Block
 from mamba_ssm.modules.mlp import GatedMLP
 from mamba_ssm.modules.mha import MHA
+
 try:
     from mamba_ssm.ops.triton.layernorm import RMSNorm, layer_norm_fn, rms_norm_fn
 except ImportError:
@@ -106,7 +107,7 @@ class MambaBackbone(nn.Module):
     Backbone blocks of the MAMBA Model.
     '''
     def __init__(self,
-                ninp: int,
+                d_model: int,
                 num_layers: int,
                 ssm_config=None,
                 norm_epsilon: float = 1e-5,
@@ -129,7 +130,7 @@ class MambaBackbone(nn.Module):
         self.blocks = nn.ModuleList(
             [
                 create_block(
-                    ninp,
+                    d_model,
                     d_intermediate=d_intermediate,
                     ssm_cfg=ssm_config,
                     attn_layer_idx=attn_layer_idx,
@@ -146,7 +147,7 @@ class MambaBackbone(nn.Module):
         )
 
         self.norm_f = (nn.LayerNorm if not rms_norm else RMSNorm)(
-            ninp, eps=norm_epsilon, **factory_kwargs
+            d_model, eps=norm_epsilon, **factory_kwargs
         )
 
         self.apply(
@@ -228,7 +229,7 @@ class MambaModel(nn.Module):
         factory_kwargs = {"device": device, "dtype": dtype}
 
         self.mamba_backbone = MambaBackbone(
-            ninp=ninp,
+            d_model=nhid,
             num_layers=self.num_layers,
             ssm_config=self.ssm_config,
             norm_epsilon=1e-5,
@@ -240,7 +241,11 @@ class MambaModel(nn.Module):
             dtype=self.dtype
         )
 
-        self.decoder = nn.Sequential(nn.Linear(ninp, nhid), nn.GELU(), nn.Linear(nhid, n_out))
+        self.linear1 = nn.Linear(ninp, nhid)
+
+        #self.activation_function = nn.GELU
+
+        self.decoder = nn.Sequential(nn.Linear(nhid, nhid), nn.GELU(), nn.Linear(nhid, n_out))
 
         self.norm_f = (nn.LayerNorm if not rms_norm else RMSNorm)(
             ninp, eps=norm_epsilon, **factory_kwargs
@@ -273,6 +278,9 @@ class MambaModel(nn.Module):
 
         src = torch.cat([style_src, train_x, x_src[single_eval_pos:]], 0)
 
+        # Emsize -> Mamba hidden size --- times the hidden factor from the config.
+        src = self.linear1(src)
+
         # Before: BPTT, (batch_size / aggregate_k_gradients), emsize
         src = src.permute(1, 0, 2)
         # After: (batch_size / aggregate_k_gradients), BPTT, emsize
@@ -284,36 +292,4 @@ class MambaModel(nn.Module):
         # After: BPTT, (batch_size / aggregate_k_gradients), emsize
 
         output = self.decoder(hidden_states)
-
         return output[single_eval_pos+len(style_src):]
-    
-
-    ''' OLD MATRIX STRUCTURE
-    def forward(self,
-                src: tuple,  # Inputs (src) have to be given as (x,y) or (style,x,y) tuple'
-                single_eval_pos: int
-                ):
-        
-        if len(src) == 2: src = (None,) + src       # Check whether a style was given
-
-        style_src, x_src, y_src = src               # Split input into style, train (x) and test (y) part.
-
-        if not style_src: style_src = torch.tensor([]).to(self.device) # To overcome the NoneType has no len() error.
-
-        x_src = self.encoder(x_src)
-        y_src = self.y_encoder(y_src.unsqueeze(-1) if len(y_src.shape) < len(x_src.shape) else y_src)
-
-        train_x = x_src[:single_eval_pos] + y_src[:single_eval_pos]
-
-        src = torch.cat([style_src, train_x, x_src[single_eval_pos:]], 0)
-
-        print(f"Before: {src.size()}")
-
-        hidden_states = self.mamba_backbone(src, inference_parameters=None)
-
-        print(hidden_states.size())
-
-        output = self.decoder(hidden_states)
-
-        return output[single_eval_pos+len(style_src):]
-    '''
