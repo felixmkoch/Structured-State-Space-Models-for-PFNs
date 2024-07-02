@@ -241,7 +241,7 @@ class MambaModel(nn.Module):
             dtype=self.dtype
         )
 
-        self.linear1 = nn.Linear(ninp, nhid)
+        #self.linear1 = nn.Linear(ninp, nhid)
 
         #self.activation_function = nn.GELU
 
