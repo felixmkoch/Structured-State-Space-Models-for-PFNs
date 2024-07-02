@@ -3,6 +3,7 @@ from tabpfn.scripts.tabular_evaluation import evaluate
 from tabpfn.scripts import tabular_metrics
 from openml.tasks import TaskType
 import numpy as np
+import wandb
 from tabpfn.datasets import load_openml_list
 
 class EvalHelper:
@@ -44,10 +45,30 @@ class EvalHelper:
 
         print(f"Naive Evluation has mean of {sum(performances) / len(performances)}")
 
+        return sum(performances) / len(performances)
+
+
+    def log_wandb_naive_evaluation(self, num_steps=100, log_name="mamba_mean_acc"):
+
+        wandb_project = "mamba_project"
+        wandb_job_type = "naive_model_exec"
+        wandb_run_name = "Majority Class Prediction"
+
+        wandb_config= {}
+
+        wandb_run = wandb.init(project=wandb_project,job_type=wandb_job_type,config=wandb_config, name=wandb_run_name)
+
+        naive_result = self.do_naive_evaluation()
+
+        for _ in range(num_steps): wandb.log({f"test/{log_name}": naive_result}) 
+
+        wandb_run.finish()
+
 
 if __name__ == "__main__":
     h = EvalHelper()
     h.do_naive_evaluation()
+    h.log_wandb_naive_evaluation(num_steps=200, log_name="mamba_mean_acc")
 
 
 

@@ -229,7 +229,7 @@ class MambaModel(nn.Module):
         factory_kwargs = {"device": device, "dtype": dtype}
 
         self.mamba_backbone = MambaBackbone(
-            d_model=nhid,
+            d_model=ninp,
             num_layers=self.num_layers,
             ssm_config=self.ssm_config,
             norm_epsilon=1e-5,
@@ -245,7 +245,7 @@ class MambaModel(nn.Module):
 
         #self.activation_function = nn.GELU
 
-        self.decoder = nn.Sequential(nn.Linear(nhid, nhid), nn.GELU(), nn.Linear(nhid, n_out))
+        self.decoder = nn.Sequential(nn.Linear(ninp, nhid), nn.GELU(), nn.Linear(nhid, n_out))
 
         self.norm_f = (nn.LayerNorm if not rms_norm else RMSNorm)(
             ninp, eps=norm_epsilon, **factory_kwargs
@@ -279,7 +279,7 @@ class MambaModel(nn.Module):
         src = torch.cat([style_src, train_x, x_src[single_eval_pos:]], 0)
 
         # Emsize -> Mamba hidden size --- times the hidden factor from the config.
-        src = self.linear1(src)
+        #src = self.linear1(src)
 
         # Before: BPTT, (batch_size / aggregate_k_gradients), emsize
         src = src.permute(1, 0, 2)
