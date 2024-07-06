@@ -21,7 +21,7 @@ mkdir tmp
 cd tmp
 git clone https://github.com/Dao-AILab/causal-conv1d.git
 cd causal-conv1d
-git checkout v1.2.0
+git checkout v1.4.0
 CAUSAL_CONV1D_FORCE_BUILD=TRUE pip install .
 cd ..
 git clone https://github.com/state-spaces/mamba.git
