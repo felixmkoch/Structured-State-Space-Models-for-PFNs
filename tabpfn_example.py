@@ -10,11 +10,11 @@ X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.33, random
 # N_ensemble_configurations controls the number of model predictions that are ensembled with feature and class rotations (See our work for details).
 # When N_ensemble_configurations > #features * #classes, no further averaging is applied.
 
-#mamba_model_path = "models_diff/mamba_custom.cpkt"
-transformer_model_path = 'models_diff/prior_diff_real_checkpoint_n_0_epoch_42.cpkt'
+mamba_model_path = "models_diff/mamba_test_model.cpkt"
+#transformer_model_path = 'models_diff/transformer_test_model.cpkt'
 
-#classifier = MambaPFNClassifier(device='cuda', N_ensemble_configurations=32, model_path=mamba_model_path)
-classifier = TabPFNClassifier(device='cuda', N_ensemble_configurations=32, model_path=transformer_model_path)
+classifier = MambaPFNClassifier(device='cuda', N_ensemble_configurations=32, model_path=mamba_model_path)
+#classifier = TabPFNClassifier(device='cuda', N_ensemble_configurations=32, model_path=transformer_model_path)
 
 classifier.fit(X_train, y_train)
 y_eval, p_eval = classifier.predict(X_test, return_winning_probability=True)

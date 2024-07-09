@@ -277,7 +277,15 @@ class Mamba2Model(nn.Module):
 
         src = torch.cat([style_src, train_x, x_src[single_eval_pos:]], 0)
 
+        # Before: BPTT, (batch_size / aggregate_k_gradients), emsize
+        src = src.permute(1, 0, 2)
+        # After: (batch_size / aggregate_k_gradients), BPTT, emsize
+
         hidden_states = self.mamba_backbone(src, inference_parameters=None)
+
+        # Before: (batch_size / aggregate_k_gradients), BPTT, emsize
+        hidden_states = hidden_states.permute(1, 0, 2)
+        # After: BPTT, (batch_size / aggregate_k_gradients), emsize
 
         output = self.decoder(hidden_states)
 

@@ -75,15 +75,17 @@ def load_model_workflow(i, e, add_name, base_path, device='cpu', eval_addition='
         return model_file, model_path, results_file
 
     model_file = None
-    if e == -1:
-        for e_ in [42] + list(range(100, -1, -1)):
-            model_file_, model_path_, results_file_ = check_file(e_)
-            if model_file_ is not None:
-                e = e_
-                model_file, model_path, results_file = model_file_, model_path_, results_file_
-                break
-    else:
-        model_file, model_path, results_file = check_file(e)
+    results_file = None
+
+    #if e == -1:
+    #    for e_ in [42] + list(range(100, -1, -1)):
+    #        model_file_, model_path_, results_file_ = check_file(e_)
+    #        if model_file_ is not None:
+    #            e = e_
+    #            model_file, model_path, results_file = model_file_, model_path_, results_file_
+    #            break
+    #else:
+    #    model_file, model_path, results_file = check_file(e)
 
     #
     # Load Custom model temp
@@ -94,9 +96,9 @@ def load_model_workflow(i, e, add_name, base_path, device='cpu', eval_addition='
     # End Load Custom Model Temp
     #
 
-    if model_file is None:
-        model_file, model_path, results_file = get_file(e)
-        raise Exception('No checkpoint found at '+str(model_path))
+    #if model_file is None:
+    #    model_file, model_path, results_file = get_file(e)
+    #    raise Exception('No checkpoint found at '+str(model_path))
     
 
     if only_inference:

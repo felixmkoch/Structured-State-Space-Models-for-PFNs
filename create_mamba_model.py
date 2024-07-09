@@ -74,7 +74,7 @@ config["num_features_used"] = uniform_int_sampler_f(1, max_features)
 
 config['batch_size'] = 64 # just because we did this in the other config. Would be 64 default
 config['emsize'] = 72 # Default was on 512, just to save some GPU mem.
-config["epochs"] = 20
+config["epochs"] = 2
 
 config["mamba_num_layers"] = 8
 config["mamba_autocast"] = True
@@ -113,11 +113,11 @@ mamba_model = get_model_mamba(config, device, should_train=True, verbose=1, mamb
 (hp_embedding, data, _), targets, single_eval_pos = next(iter(mamba_model[3]))
 
 # Save Mamba Model
-#save_model(mamba_model[2], 
-#           base_path, 
-#           f'models_diff/mamba_custom.cpkt',
-#           config
-#           )
+save_model(mamba_model[2], 
+           base_path, 
+           f'tabpfn/models_diff/mamba_test_model.cpkt',
+           config
+           )
 
 #------------------------------------------------------------------------------------------------
 #                                         END MODEL

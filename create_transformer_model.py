@@ -83,7 +83,7 @@ config["num_features_used"] = uniform_int_sampler_f(1, max_features)
 
 config['batch_size'] = 32 # just because we did this in the other config. Would be 64 default
 config['emsize'] = 64 # Default was on 512, just to save some GPU mem.
-config["epochs"] = 10
+config["epochs"] = 2
 
 #------------------------------------------------------------------------------------------------
 #                                         END CONFIG
@@ -121,11 +121,11 @@ transformer_model = get_model(config, device, should_train=True, verbose=1, eval
 config['epoch_in_training'] = config["epochs"]
 
 # Save Transformer Model
-#save_model(transformer_model[2], 
-#           base_path, 
-#           f'models_diff/transformer_custom.cpkt',
-#           config
-#           )
+save_model(transformer_model[2], 
+           base_path, 
+           f'models_diff/transformer_test_model.cpkt',
+           config
+           )
 
 #------------------------------------------------------------------------------------------------
 #                                         END MODELS

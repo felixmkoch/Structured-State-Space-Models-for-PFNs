@@ -14,16 +14,51 @@ class EvalHelper:
         if dids == "test": valid_dids_classification = [973, 1596, 40981, 1468, 40984, 40975, 41163, 41147, 1111, 41164, 1169, 1486, 41143, 1461, 41167, 40668, 41146, 41169, 41027, 23517, 41165, 41161, 41159, 41138, 1590, 41166, 1464, 41168, 41150, 1489, 41142, 3, 12, 31, 54, 1067]
         else: valid_dids_classification = [13, 59, 4, 15, 40710, 43, 1498]
 
+        # OpenCC Dids filtered by N_samples < 2000, N feats < 100, N classes < 10
+        self.openml_cc18_dids = [11,14,15,16,18,22,23,29,31,37,50,54,188,458,469,1049,1050,1063,1068,1510,1494,1480,1462,1464,6332,23381,40966,40982,40994,40975]
+
+        print("Loading the OpenML cc18 Dicts ...")
+        self.openml_cc18_dataset_data = list(zip(*[load_openml_list([did]) for did in self.openml_cc18_dids]))[0]
+
+        # OpenML cc18 purely numerical without missing values (18 items) 
+
         self.dids = dids
-            
+
+        print("Loading validation Datasets ...")    
         self.datasets_data, _ = load_openml_list(valid_dids_classification)
 
 
+    
     def do_evaluation(self, model, bptt, eval_positions, metric, device, method_name):
+        '''
+        Evaluation on the validation set for everything.
+        '''
+
 
         result = evaluate(self.datasets_data, bptt, eval_positions, metric, model, device,method_name=method_name)
 
         return result['mean_metric']
+    
+
+    def do_evaluation_custom(self, model, bptt, eval_positions, metric, device, method_name, evaluation_type):
+
+        '''
+        Evaluation on customly settable datasets.
+        '''
+
+        if evaluation_type == "openmlcc18":
+            print("Evaluating on the OpenML cc18 Dataset ...")
+
+            result = {}
+
+            for did_idx, did in enumerate(self.openml_cc18_dids):
+                result[did] = evaluate(self.openml_cc18_dataset_data[did_idx], bptt, eval_positions, metric, model, device, method_name=method_name)["mean_metric"].item()
+
+            return result
+
+
+        # Standard case: Normal eval dataset
+        return evaluate(self.datasets_data, bptt, eval_positions, metric, model, device,method_name=method_name)['mean_metric']
     
 
 
@@ -67,8 +102,10 @@ class EvalHelper:
 
 if __name__ == "__main__":
     h = EvalHelper()
-    h.do_naive_evaluation()
-    h.log_wandb_naive_evaluation(num_steps=200, log_name="mamba_mean_acc")
+    #h.do_naive_evaluation()
+    #h.log_wandb_naive_evaluation(num_steps=200, log_name="mamba_mean_acc")
+
+
 
 
 

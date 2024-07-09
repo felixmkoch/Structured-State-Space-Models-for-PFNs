@@ -200,15 +200,15 @@ class S4Model_Wrap(nn.Module):
 
         src = torch.cat([style_src, train_x, x_src[single_eval_pos:]], 0)
 
-        # Shape here: [bptt, feat, batch_size]
-        src = src.permute(2, 0, 1)
-        # Shape here: [batch_size, bptt, feat]
-
         print(f"Before: {src.shape}")
+
+        # Shape here: [bptt, batch_size, emsize]
+        src = src.permute(1, 0, 2)
+        # Shape here: [batch_size, bptt, emsize]
 
         hidden_states = self.s4_backbone(src)
 
-        print(hidden_states.size())
+        hidden_states = hidden_states.permute(1, 0, 2)
 
         output = self.decoder(hidden_states)
 
