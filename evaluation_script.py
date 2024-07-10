@@ -16,10 +16,11 @@ EVALUATION_METHODS = ["transformer", "mamba"]
 
 METRIC_USED = tabular_metrics.auc_metric
 
-RESULT_CSV_SAVE_DIR = os.path.join("result_csvs", "cc18_results_transformer_large.csv")
+RESULT_CSV_SAVE_DIR = os.path.join("result_csvs", "cc18_results_test.csv")
 
-MAMBA_MODEL_NAME = "tabpfn/models_diff/mamba_test_model.cpkt"
-TRANSFORMER_MODEL_NAME = "tabpfn/models_diff/transformer_test_model.cpkt"
+#MAMBA_MODEL_NAME = "tabpfn/models_diff/mamba_test_model.cpkt"
+MAMBA_MODEL_NAME = "tabpfn/models_diff/mamba_test_50classes_model.cpkt"
+TRANSFORMER_MODEL_NAME = "tabpfn/models_diff/tabpfn_transformer_model.cpkt"
 
 def do_evaluation(eval_list):
 

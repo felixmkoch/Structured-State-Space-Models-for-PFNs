@@ -22,7 +22,7 @@
     "nan_prob_no_reason":0.0,
     "nan_prob_unknown_reason":0.0,
     "nan_prob_a_reason":0.0,
-    "max_num_classes":10,
+    "max_num_classes":50,
     "num_classes":null,
     "noise_type":"Gaussian",
     "balanced":false,

@@ -97,6 +97,7 @@ def evaluate(datasets, bptt, eval_positions, metric_used, model, device='cpu'
     :param kwargs:
     :return:
     """
+
     overall_result = {'metric_used': get_scoring_string(metric_used)
                       , 'bptt': bptt
                       , 'eval_positions': eval_positions}
@@ -115,7 +116,6 @@ def evaluate(datasets, bptt, eval_positions, metric_used, model, device='cpu'
         for eval_position in (eval_positions if verbose else eval_positions):
             eval_position_real = int(dataset_bptt * 0.5) if 2 * eval_position > dataset_bptt else eval_position
             eval_position_bptt = int(eval_position_real * 2.0)
-
             r = evaluate_position(X, y, model=model
                         , num_classes=len(torch.unique(y)) # Add: y[2]; before: y
                         , categorical_feats = categorical_feats
@@ -132,12 +132,15 @@ def evaluate(datasets, bptt, eval_positions, metric_used, model, device='cpu'
                         , path_interfix=""
                         , method=""
                         ,**kwargs)
+            
 
             if r is None:
                 print('Execution failed', ds_name)
                 continue
 
             _, outputs, ys, best_configs, time_used = r
+
+            print(f"-----------Fimension Output: {outputs.size()}")
 
             if torch.is_tensor(outputs):
                 outputs = outputs.to(outputs.device)
@@ -170,6 +173,7 @@ def evaluate(datasets, bptt, eval_positions, metric_used, model, device='cpu'
             lib = torch if return_tensor else np
             if not lib.isnan(new_metric).any():
                 aggregated_metric, num = aggregated_metric + new_metric, num + 1
+
 
         overall_result.update(ds_result)
         if num > 0:
@@ -298,22 +302,24 @@ def evaluate_position(X, y, categorical_feats, model, bptt
                                                             , categorical_feats=categorical_feats
                                                             , inference_mode=True
                                                             , device=device
-                                                            , extend_features=True,
-                                                            **kwargs), None
+                                                            , extend_features=True
+                                                            , **kwargs), None
         if method_name == "mamba":
             outputs, best_configs = mamba_predict(model, eval_xs, eval_ys, eval_position, metric_used=metric_used
                                                             , categorical_feats=categorical_feats
                                                             , inference_mode=True
                                                             , device=device
-                                                            , extend_features=True,
-                                                            **kwargs), None
+                                                            , extend_features=True
+                                                            , **kwargs), None
     else:
 
         print(f"Baseline Predict method {metric_used} with {max_time} maximum time.")
         _, outputs, best_configs = baseline_predict(model, eval_xs, eval_ys, categorical_feats
                                                     , eval_pos=eval_position
                                                     , device=device
-                                                    , max_time=max_time, metric_used=metric_used, **kwargs)
+                                                    , max_time=max_time
+                                                    , metric_used=metric_used
+                                                    , **kwargs)
 
     eval_ys = eval_ys[eval_position:]
 

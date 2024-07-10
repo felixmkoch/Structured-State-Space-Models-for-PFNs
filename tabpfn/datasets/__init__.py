@@ -48,7 +48,6 @@ def load_openml_list(dids, filter_for_nan=False
                      , return_capped = False):
     datasets = []
     openml_list = openml.datasets.list_datasets(dids)
-    print(f'Number of datasets: {len(openml_list)}')
 
     datalist = pd.DataFrame.from_dict(openml_list, orient="index")
     if filter_for_nan:

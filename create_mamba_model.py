@@ -115,7 +115,7 @@ mamba_model = get_model_mamba(config, device, should_train=True, verbose=1, mamb
 # Save Mamba Model
 save_model(mamba_model[2], 
            base_path, 
-           f'tabpfn/models_diff/mamba_test_model.cpkt',
+           f'tabpfn/models_diff/mamba_test_50classes_model.cpkt',
            config
            )
 

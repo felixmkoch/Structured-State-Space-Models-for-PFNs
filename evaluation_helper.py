@@ -26,7 +26,7 @@ class EvalHelper:
         print("Loading the OpenML cc18 Dicts ...")
         self.openml_cc18_dataset_data = {}
         for did in self.openml_cc18_dids:
-            self.openml_cc18_dataset_data[did] = load_openml_list([did])[0]
+            self.openml_cc18_dataset_data[did] = load_openml_list([did], num_feats=99999, max_samples=999999, max_num_classes=999)[0]
 
         # Validation and so on - not OpenML cc18
         print("Loading validation Datasets ...")    

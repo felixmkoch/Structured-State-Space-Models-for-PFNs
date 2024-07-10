@@ -383,6 +383,8 @@ def transformer_predict(model, eval_xs, eval_ys, eval_position,
             output = model(
                     (used_style.repeat(eval_xs.shape[1], 1) if used_style is not None else None, eval_xs, eval_ys.float()),
                     single_eval_pos=eval_position)[:, :, 0:num_classes]
+            
+            #print(F"Output Dimension: {output.size()}")
 
             output = output[:, :, 0:num_classes] / torch.exp(softmax_temperature)
             if not return_logits:
