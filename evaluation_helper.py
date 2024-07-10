@@ -5,6 +5,7 @@ from openml.tasks import TaskType
 import numpy as np
 import wandb
 from tabpfn.datasets import load_openml_list
+import openml
 
 class EvalHelper:
 
@@ -15,16 +16,21 @@ class EvalHelper:
         else: valid_dids_classification = [13, 59, 4, 15, 40710, 43, 1498]
 
         # OpenCC Dids filtered by N_samples < 2000, N feats < 100, N classes < 10
-        self.openml_cc18_dids = [11,14,15,16,18,22,23,29,31,37,50,54,188,458,469,1049,1050,1063,1068,1510,1494,1480,1462,1464,6332,23381,40966,40982,40994,40975]
+        self.openml_cc18_dids = [3, 6, 11, 12, 14, 15, 16, 18, 22, 23, 28, 29, 31, 32, 37, 44, 46, 50, 54, 151, 182, 188, 38, 307, 300, 458, 469, 554, 1049, 1050, 1053, 1063, 1067, 1068, 1590, 4134, 1510, 1489, 1494, 1497, 1501, 1480, 1485, 1486, 1487, 1468, 1475, 1462, 1464, 4534, 6332, 1461, 4538, 1478, 23381, 40499, 40668, 40966, 40982, 40994, 40983, 40975, 40984, 40979, 40996, 41027, 23517, 40923, 40927, 40978, 40670, 40701]
+        self.openml_cc18_dids_small = [11, 14, 15, 16, 18, 22, 23, 29, 31, 37, 50, 54, 188, 458, 469, 1049, 1050, 1063, 1068, 1462, 1464, 1480, 1494, 1510, 6332, 23381, 40966, 40975, 40982, 40994]
+        self.openml_cc18_dids_large = [3, 6, 12, 28, 32, 38, 44, 46, 151, 182, 300, 307, 554, 1053, 1067, 1461, 1468, 1475, 1478, 1485, 1486, 1487, 1489, 1497, 1501, 1590, 4134, 4534, 4538, 23517, 40499, 40668, 40670, 40701, 40923, 40927, 40978, 40979, 40983, 40984, 40996, 41027]
+
+        print(f"Number of small opencc-18 Datasets: {len(self.openml_cc18_dids_small)}")
+        print(f"Number of large opencc-18 Datasets: {len(self.openml_cc18_dids_large)}")
 
         print("Loading the OpenML cc18 Dicts ...")
-        self.openml_cc18_dataset_data = list(zip(*[load_openml_list([did]) for did in self.openml_cc18_dids]))[0]
+        self.openml_cc18_dataset_data = {}
+        for did in self.openml_cc18_dids:
+            self.openml_cc18_dataset_data[did] = load_openml_list([did])[0]
 
-        # OpenML cc18 purely numerical without missing values (18 items) 
-
-        self.dids = dids
-
+        # Validation and so on - not OpenML cc18
         print("Loading validation Datasets ...")    
+        self.dids = dids
         self.datasets_data, _ = load_openml_list(valid_dids_classification)
 
 
@@ -33,8 +39,7 @@ class EvalHelper:
         '''
         Evaluation on the validation set for everything.
         '''
-
-
+        
         result = evaluate(self.datasets_data, bptt, eval_positions, metric, model, device,method_name=method_name)
 
         return result['mean_metric']
@@ -51,8 +56,18 @@ class EvalHelper:
 
             result = {}
 
-            for did_idx, did in enumerate(self.openml_cc18_dids):
-                result[did] = evaluate(self.openml_cc18_dataset_data[did_idx], bptt, eval_positions, metric, model, device, method_name=method_name)["mean_metric"].item()
+            for did_idx, did in enumerate(self.openml_cc18_dids_small):
+                result[did] = evaluate(self.openml_cc18_dataset_data[did], bptt, eval_positions, metric, model, device, method_name=method_name)["mean_metric"].item()
+
+            return result
+        
+        if evaluation_type == "openmlcc18_large":
+            print("Evaluating on the large part of the OpenML cc18 Dataset ...")
+
+            result = {}
+
+            for did_idx, did in enumerate(self.openml_cc18_dids_large):
+                result[did] = evaluate(self.openml_cc18_dataset_data[did], bptt, eval_positions, metric, model, device, method_name=method_name)["mean_metric"].item()
 
             return result
 

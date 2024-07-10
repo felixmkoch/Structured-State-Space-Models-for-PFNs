@@ -308,10 +308,13 @@ def evaluate_position(X, y, categorical_feats, model, bptt
                                                             , extend_features=True,
                                                             **kwargs), None
     else:
+
+        print(f"Baseline Predict method {metric_used} with {max_time} maximum time.")
         _, outputs, best_configs = baseline_predict(model, eval_xs, eval_ys, categorical_feats
                                                     , eval_pos=eval_position
                                                     , device=device
                                                     , max_time=max_time, metric_used=metric_used, **kwargs)
+
     eval_ys = eval_ys[eval_position:]
 
 
