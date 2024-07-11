@@ -275,7 +275,7 @@ def train(priordataloader_class,
                                                              bptt=bptt,
                                                              eval_positions=eval_positions,
                                                              metric=metric_used, 
-                                                             device="cuda", 
+                                                             device=gpu_device, 
                                                              method_name="transformer")
                 
                 #print(f"Evaluation Results on the Transformer Evaluation: {eval_result}")
