@@ -2,8 +2,10 @@
 # Edit at https://www.toptal.com/developers/gitignore?templates=python,visualstudiocode,cuda
 
 ### Other Stuff ###
-#*/models_diff/*
+*/models_diff/*
 wandb/*
+*/wandb/*
+*.cpkt
 
 ### CUDA ###
 *.i
