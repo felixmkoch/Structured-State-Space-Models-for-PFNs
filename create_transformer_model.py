@@ -85,6 +85,8 @@ config['batch_size'] = 32 # just because we did this in the other config. Would 
 config['emsize'] = 64 # Default was on 512, just to save some GPU mem.
 config["epochs"] = 2
 
+device = "cuda:0"
+
 #------------------------------------------------------------------------------------------------
 #                                         END CONFIG
 #------------------------------------------------------------------------------------------------
@@ -93,9 +95,9 @@ config["epochs"] = 2
 #                                           WANDB
 #------------------------------------------------------------------------------------------------
 
-wandb_project = "transformer_project"
+wandb_project = "mamba_project"
 wandb_job_type = "create_transformer_model"
-wandb_run_name = "Transformer Run"
+wandb_run_name = f"Transformer {config['emsize']}e {config['batch_size']}b"
 
 wandb_config= config
 
