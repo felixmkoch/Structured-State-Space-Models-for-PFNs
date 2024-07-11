@@ -36,7 +36,6 @@ Metrics calculation
 """
 def auc_metric(target, pred, multi_class='ovo', numpy=False):
     lib = np if numpy else torch
-    #print(f"Target: {target} and prediction: {pred} with pred size: {pred.size()}")
     try:
         if not numpy:
             target = torch.tensor(target) if not torch.is_tensor(target) else target

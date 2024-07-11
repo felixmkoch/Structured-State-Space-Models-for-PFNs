@@ -140,8 +140,6 @@ def evaluate(datasets, bptt, eval_positions, metric_used, model, device='cpu'
 
             _, outputs, ys, best_configs, time_used = r
 
-            print(f"-----------Fimension Output: {outputs.size()}")
-
             if torch.is_tensor(outputs):
                 outputs = outputs.to(outputs.device)
                 ys = ys.to(outputs.device)

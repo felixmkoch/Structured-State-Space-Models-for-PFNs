@@ -89,7 +89,7 @@ config["mamba_autocast"] = True
 
 wandb_project = "mamba_project"
 wandb_job_type = "create_mamba_model"
-wandb_run_name = "Mamba Run"
+wandb_run_name = f"Mamba {config["mamba_num_layers"]}l {config["emsize"]}e {config["batch_size"]}b"
 
 wandb_config= config
 

@@ -9,17 +9,17 @@ from tabpfn.scripts.tabular_baselines import *
 
 import pandas as pd
 
-EVALUATION_TYPE = "openmlcc18_large"
-#EVALUATION_TYPE = "openmlcc18"
+#EVALUATION_TYPE = "openmlcc18_large"
+EVALUATION_TYPE = "openmlcc18"
 
 EVALUATION_METHODS = ["transformer", "mamba"]
 
 METRIC_USED = tabular_metrics.auc_metric
 
-RESULT_CSV_SAVE_DIR = os.path.join("result_csvs", "cc18_results_test.csv")
+RESULT_CSV_SAVE_DIR = os.path.join("result_csvs", "cc18_small_result.csv")
 
 #MAMBA_MODEL_NAME = "tabpfn/models_diff/mamba_test_model.cpkt"
-MAMBA_MODEL_NAME = "tabpfn/models_diff/mamba_test_50classes_model.cpkt"
+MAMBA_MODEL_NAME = "tabpfn/models_diff/mamba_150e.cpkt"
 TRANSFORMER_MODEL_NAME = "tabpfn/models_diff/tabpfn_transformer_model.cpkt"
 
 def do_evaluation(eval_list):
