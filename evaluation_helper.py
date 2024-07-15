@@ -20,9 +20,6 @@ class EvalHelper:
         self.openml_cc18_dids_small = [11, 14, 15, 16, 18, 22, 23, 29, 31, 37, 50, 54, 188, 458, 469, 1049, 1050, 1063, 1068, 1462, 1464, 1480, 1494, 1510, 6332, 23381, 40966, 40975, 40982, 40994]
         self.openml_cc18_dids_large = [3, 6, 12, 28, 32, 38, 44, 46, 151, 182, 300, 307, 554, 1053, 1067, 1461, 1468, 1475, 1478, 1485, 1486, 1487, 1489, 1497, 1501, 1590, 4134, 4534, 4538, 23517, 40499, 40668, 40670, 40701, 40923, 40927, 40978, 40979, 40983, 40984, 40996, 41027]
 
-        print(f"Number of small opencc-18 Datasets: {len(self.openml_cc18_dids_small)}")
-        print(f"Number of large opencc-18 Datasets: {len(self.openml_cc18_dids_large)}")
-
         print("Loading the OpenML cc18 Dicts ...")
         self.openml_cc18_dataset_data = {}
         for did in self.openml_cc18_dids:
