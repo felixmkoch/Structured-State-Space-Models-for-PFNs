@@ -98,7 +98,7 @@ def evaluate(datasets, bptt, eval_positions, metric_used, model, device='cpu'
     :return:
     """
 
-    overall_result = {'metric_used': get_scoring_string(metric_used)
+    overall_result = {'metric_used': "acc" if metric_used.__name__ == tabular_metrics.accuracy_metric.__name__ else get_scoring_string(metric_used)
                       , 'bptt': bptt
                       , 'eval_positions': eval_positions}
 
