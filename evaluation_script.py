@@ -14,13 +14,13 @@ EVALUATION_TYPE = "openmlcc18"
 
 EVALUATION_METHODS = ["transformer", "mamba"]
 
-METRIC_USED = tabular_metrics.auc_metric
+METRIC_USED = tabular_metrics.accuracy_metric
 
-RESULT_CSV_SAVE_DIR = os.path.join("result_csvs", "cc18_small_result.csv")
+RESULT_CSV_SAVE_DIR = os.path.join("result_csvs", "cc18_small_custom_models_acc.csv")
 
 #MAMBA_MODEL_NAME = "tabpfn/models_diff/mamba_test_model.cpkt"
-MAMBA_MODEL_NAME = "tabpfn/models_diff/mamba_150e.cpkt"
-TRANSFORMER_MODEL_NAME = "tabpfn/models_diff/tabpfn_transformer_model.cpkt"
+MAMBA_MODEL_NAME = "tabpfn/models_diff/mamba_model_mid_run_b512_s16.cpkt"
+TRANSFORMER_MODEL_NAME = "tabpfn/models_diff/transformer_120e_tabpfn.cpkt"
 
 def do_evaluation(eval_list):
 
