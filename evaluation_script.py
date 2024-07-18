@@ -25,6 +25,8 @@ TRANSFORMER_MODEL_NAME = "tabpfn/models_diff/transformer_120e_tabpfn.cpkt"
 bptt_here = 100000
 max_time = 3600
 
+device = "cuda"
+
 def do_evaluation(eval_list):
 
     result_dict = {}
@@ -37,14 +39,14 @@ def do_evaluation(eval_list):
     #
     if "mamba" in eval_list:
         # Load Mamba Model (Yes this is a bit scuffed).
-        m_model, mamba_config, results_file = mamba_load_model_workflow(2, -1, add_name="", base_path="", device="cuda",eval_addition='', 
+        m_model, mamba_config, results_file = mamba_load_model_workflow(2, -1, add_name="", base_path="", device=device,eval_addition='', 
                                                     only_inference=True, model_path_custom=MAMBA_MODEL_NAME)
 
         # That's the real mamba model here.
         mamba_model = m_model[2]
 
         # Key is the dataset id (did) and value the mean error on it.
-        result_dict["mamba"] = eval_helper.do_evaluation_custom(mamba_model, bptt=bptt_here, eval_positions=mamba_config["eval_positions"], metric=METRIC_USED, device="cuda", method_name="mamba",
+        result_dict["mamba"] = eval_helper.do_evaluation_custom(mamba_model, bptt=bptt_here, eval_positions=mamba_config["eval_positions"], metric=METRIC_USED, device=device, method_name="mamba",
                                         evaluation_type=EVALUATION_TYPE)
 
     #
@@ -52,14 +54,14 @@ def do_evaluation(eval_list):
     #
     if "transformer" in eval_list:
         # Load Transformer Model (Yes this is a bit scuffed).
-        t_model, transformer_config, results_file = transformer_load_model_workflow(2, -1, add_name="", base_path="", device="cuda",eval_addition='', 
+        t_model, transformer_config, results_file = transformer_load_model_workflow(2, -1, add_name="", base_path="", device=device,eval_addition='', 
                                                     only_inference=True, model_path_custom=TRANSFORMER_MODEL_NAME)
 
         # That's the real transformer model here.
         transformer_model = t_model[2]
 
         # Key is the dataset id (did) and value the mean error on it.
-        result_dict["transformer"] = eval_helper.do_evaluation_custom(transformer_model, bptt=bptt_here, eval_positions=transformer_config["eval_positions"], metric=METRIC_USED, device="cuda", method_name="transformer",
+        result_dict["transformer"] = eval_helper.do_evaluation_custom(transformer_model, bptt=bptt_here, eval_positions=transformer_config["eval_positions"], metric=METRIC_USED, device=device, method_name="transformer",
                                         evaluation_type=EVALUATION_TYPE)
 
 
@@ -72,7 +74,7 @@ def do_evaluation(eval_list):
 
         # Key is the dataset id (did) and value the mean error on it. We use mamba model params as bptt and eval_positions
         # NOTE: Current max time is 300, aka 5 minutes. Need to change this maybe.
-        result_dict["xgboost"] = eval_helper.do_evaluation_custom(xgboost_model, bptt=bptt_here, eval_positions=mamba_config["eval_positions"], metric=METRIC_USED, device="cuda", method_name="xgb",
+        result_dict["xgboost"] = eval_helper.do_evaluation_custom(xgboost_model, bptt=bptt_here, eval_positions=mamba_config["eval_positions"], metric=METRIC_USED, device=device, method_name="xgb",
                                         evaluation_type=EVALUATION_TYPE, max_time=max_time)
 
 
@@ -84,7 +86,7 @@ def do_evaluation(eval_list):
         knn_model = knn_metric
 
         # Key is the dataset id (did) and value the mean error on it. We use mamba model params as bptt and eval_positions
-        result_dict["knn"] = eval_helper.do_evaluation_custom(knn_model, bptt=bptt_here, eval_positions=mamba_config["eval_positions"], metric=METRIC_USED, device="cuda", method_name="knn",
+        result_dict["knn"] = eval_helper.do_evaluation_custom(knn_model, bptt=bptt_here, eval_positions=mamba_config["eval_positions"], metric=METRIC_USED, device=device, method_name="knn",
                                         evaluation_type=EVALUATION_TYPE, max_time=max_time)
     
 
