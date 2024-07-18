@@ -9,18 +9,18 @@ from tabpfn.scripts.tabular_baselines import *
 
 import pandas as pd
 
-#EVALUATION_TYPE = "openmlcc18_large"
-EVALUATION_TYPE = "openmlcc18"
+EVALUATION_TYPE = "openmlcc18_large"
+#EVALUATION_TYPE = "openmlcc18"
 
 EVALUATION_METHODS = ["transformer", "mamba"]
 
-METRIC_USED = tabular_metrics.accuracy_metric
+METRIC_USED = tabular_metrics.auc_metric
 
-RESULT_CSV_SAVE_DIR = os.path.join("result_csvs", "cc18_small_custom_models_acc.csv")
+RESULT_CSV_SAVE_DIR = os.path.join("result_csvs", "test_csv.csv")
 
 #MAMBA_MODEL_NAME = "tabpfn/models_diff/mamba_test_model.cpkt"
-MAMBA_MODEL_NAME = "tabpfn/models_diff/mamba_model_mid_run_b512_s16.cpkt"
-TRANSFORMER_MODEL_NAME = "tabpfn/models_diff/transformer_120e_tabpfn.cpkt"
+MAMBA_MODEL_NAME = "tabpfn/models_diff/mamba_150e.cpkt"
+TRANSFORMER_MODEL_NAME = "tabpfn/models_diff/tabpfn_transformer_model.cpkt"
 
 def do_evaluation(eval_list):
 
@@ -88,27 +88,6 @@ def do_evaluation(eval_list):
     return result_dict
 
 
-
-
-'''
-# results into csv
-result_arr = []
-header = ["did", "transformer", "mamba", "knn"] # , "xgb"]
-
-for key in eval_helper_mamba_results.keys(): result_arr.append(
-                                    [
-                                        key, 
-                                        eval_helper_transformer_results[key], 
-                                        eval_helper_mamba_results[key],
-                                        #eval_helper_xgb_results[key]
-                                        eval_helper_knn_results[key]
-                                     ]
-)
-
-df_out = pd.DataFrame(result_arr, columns=header)
-
-df_out.to_csv(RESULT_CSV_SAVE_DIR)
-'''
 
 if __name__ == "__main__":
 

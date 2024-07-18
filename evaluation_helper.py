@@ -4,8 +4,10 @@ from tabpfn.scripts import tabular_metrics
 from openml.tasks import TaskType
 import numpy as np
 import wandb
+from collections import Counter
 from tabpfn.datasets import load_openml_list
 import openml
+import torch
 
 class EvalHelper:
 
@@ -24,6 +26,8 @@ class EvalHelper:
         self.openml_cc18_dataset_data = {}
         for did in self.openml_cc18_dids:
             self.openml_cc18_dataset_data[did] = load_openml_list([did], num_feats=99999, max_samples=999999, max_num_classes=999)[0]
+        
+        self.openml_cc18_dataset_data_lim = {}
 
         # Validation and so on - not OpenML cc18
         print("Loading validation Datasets ...")    
@@ -41,39 +45,70 @@ class EvalHelper:
 
         return result['mean_metric']
     
+    
+    def limit_dataset(self, ds_name, X, y, categorical_feats, max_classes, max_features):
+        # Ensure X and y are tensors
+        if not isinstance(X, torch.Tensor):
+            X = torch.tensor(X)
+        if not isinstance(y, torch.Tensor):
+            y = torch.tensor(y)
+        
+        # Limit features
+        X_limited = X[:, :max_features]
+        
+        # Get top max_classes majority classes
+        y_np = y.numpy()
+        class_counts = Counter(y_np)
+        top_classes = [cls for cls, _ in class_counts.most_common(max_classes)]
+        
+        # Create a mask for top classes
+        top_classes_set = set(top_classes)
+        mask = torch.tensor([item in top_classes_set for item in y_np])
+        
+        # Filter rows to include only the top max_classes
+        X_limited = X_limited[mask]
+        y_limited = y[mask]
+    
+        # Return the limited dataset
+        return (ds_name, X_limited, y_limited, categorical_feats, None, None)
+    
+    
 
-    def do_evaluation_custom(self, model, bptt, eval_positions, metric, device, method_name, evaluation_type):
+    def make_limit_datasets(self, max_classes, max_features, limit_dids):
+
+        for did in limit_dids:
+            ds_name, X, y, categorical_feats, _, _ = self.openml_cc18_dataset_data[did][0]
+            new_data = self.limit_dataset(ds_name, X, y, categorical_feats, max_classes, max_features)
+            self.openml_cc18_dataset_data_lim[did] = [new_data]
+
+    
+
+    def do_evaluation_custom(self, model, bptt, eval_positions, metric, device, method_name, evaluation_type, max_classes=10, max_features=100):
 
         '''
         Evaluation on customly settable datasets.
         '''
 
-        if evaluation_type == "openmlcc18":
-            print("Evaluating on the OpenML cc18 Dataset ...")
-
-            result = {}
-
-            for did_idx, did in enumerate(self.openml_cc18_dids_small):
-                result[did] = evaluate(self.openml_cc18_dataset_data[did], bptt, eval_positions, metric, model, device, method_name=method_name)["mean_metric"].item()
-
-            return result
-        
-        if evaluation_type == "openmlcc18_large":
-            print("Evaluating on the large part of the OpenML cc18 Dataset ...")
-
-            result = {}
-
-            for did_idx, did in enumerate(self.openml_cc18_dids_large):
-                result[did] = evaluate(self.openml_cc18_dataset_data[did], bptt, eval_positions, metric, model, device, method_name=method_name)["mean_metric"].item()
-
-            return result
-
-
         # Standard case: Normal eval dataset
-        return evaluate(self.datasets_data, bptt, eval_positions, metric, model, device,method_name=method_name)['mean_metric']
+        if evaluation_type not in ["openmlcc18", "openmlcc18_large"]: return evaluate(self.datasets_data, bptt, eval_positions, metric, model, device,method_name=method_name)['mean_metric']
+
+        # The dataset to iterate over
+        ds = None
+        if evaluation_type == "openmlcc18": ds = self.openml_cc18_dids_small
+        if evaluation_type == "openmlcc18_large": ds = self.openml_cc18_dids_large
+
+        self.make_limit_datasets(max_classes, max_features, ds)
+
+        print("Evaluating custom dataset ... ")
+
+        result = {}
+
+        for did_idx, did in enumerate(ds):
+            result[did] = evaluate(self.openml_cc18_dataset_data_lim[did], bptt, eval_positions, metric, model, device, method_name=method_name)["mean_metric"].item()
+
+        return result
+
     
-
-
     def do_naive_evaluation(self):
 
         performances = []
