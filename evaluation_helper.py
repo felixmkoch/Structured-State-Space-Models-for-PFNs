@@ -83,14 +83,14 @@ class EvalHelper:
 
     
 
-    def do_evaluation_custom(self, model, bptt, eval_positions, metric, device, method_name, evaluation_type, max_classes=10, max_features=100):
+    def do_evaluation_custom(self, model, bptt, eval_positions, metric, device, method_name, evaluation_type, max_classes=10, max_features=100, max_time=300):
 
         '''
         Evaluation on customly settable datasets.
         '''
 
         # Standard case: Normal eval dataset
-        if evaluation_type not in ["openmlcc18", "openmlcc18_large"]: return evaluate(self.datasets_data, bptt, eval_positions, metric, model, device,method_name=method_name)['mean_metric']
+        if evaluation_type not in ["openmlcc18", "openmlcc18_large"]: return evaluate(self.datasets_data, bptt, eval_positions, metric, model, device,method_name=method_name, max_time=max_time)['mean_metric']
 
         # The dataset to iterate over
         ds = None
@@ -104,7 +104,7 @@ class EvalHelper:
         result = {}
 
         for did_idx, did in enumerate(ds):
-            result[did] = evaluate(self.openml_cc18_dataset_data_lim[did], bptt, eval_positions, metric, model, device, method_name=method_name)["mean_metric"].item()
+            result[did] = evaluate(self.openml_cc18_dataset_data_lim[did], bptt, eval_positions, metric, model, device, method_name=method_name, max_time=max_time)["mean_metric"].item()
 
         return result
 

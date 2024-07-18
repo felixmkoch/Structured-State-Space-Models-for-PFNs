@@ -12,7 +12,7 @@ import pandas as pd
 EVALUATION_TYPE = "openmlcc18_large"
 #EVALUATION_TYPE = "openmlcc18"
 
-EVALUATION_METHODS = ["transformer", "mamba"]
+EVALUATION_METHODS = ["xgboost"]
 
 METRIC_USED = tabular_metrics.auc_metric
 
@@ -22,7 +22,8 @@ RESULT_CSV_SAVE_DIR = os.path.join("result_csvs", "cc18_large_cropped_bpttmax.cs
 MAMBA_MODEL_NAME = "tabpfn/models_diff/mamba_current.cpkt"
 TRANSFORMER_MODEL_NAME = "tabpfn/models_diff/transformer_120e_tabpfn.cpkt"
 
-bptt_here = 10000
+bptt_here = 100000
+max_time = 3600
 
 def do_evaluation(eval_list):
 
@@ -72,7 +73,7 @@ def do_evaluation(eval_list):
         # Key is the dataset id (did) and value the mean error on it. We use mamba model params as bptt and eval_positions
         # NOTE: Current max time is 300, aka 5 minutes. Need to change this maybe.
         result_dict["xgboost"] = eval_helper.do_evaluation_custom(xgboost_model, bptt=bptt_here, eval_positions=mamba_config["eval_positions"], metric=METRIC_USED, device="cuda", method_name="xgb",
-                                        evaluation_type=EVALUATION_TYPE)
+                                        evaluation_type=EVALUATION_TYPE, max_time=max_time)
 
 
     #
@@ -84,7 +85,7 @@ def do_evaluation(eval_list):
 
         # Key is the dataset id (did) and value the mean error on it. We use mamba model params as bptt and eval_positions
         result_dict["knn"] = eval_helper.do_evaluation_custom(knn_model, bptt=bptt_here, eval_positions=mamba_config["eval_positions"], metric=METRIC_USED, device="cuda", method_name="knn",
-                                        evaluation_type=EVALUATION_TYPE)
+                                        evaluation_type=EVALUATION_TYPE, max_time=max_time)
     
 
     return result_dict
