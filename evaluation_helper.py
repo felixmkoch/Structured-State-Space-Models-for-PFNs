@@ -33,7 +33,7 @@ class EvalHelper:
         data_keys = list(self.datasets_data.keys())
 
         for did in dids:
-            if not did not in data_keys:
+            if not (did in data_keys):
                 self.datasets_data[did] = load_openml_list([did], num_feats=99999, max_samples=999999, max_num_classes=999)[0]
 
     
