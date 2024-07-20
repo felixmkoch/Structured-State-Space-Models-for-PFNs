@@ -11,11 +11,11 @@ import torch
 
 class EvalHelper:
 
-    def __init__(self, dids="default"):
+    def __init__(self):
 
         # Got these datasets from the scripts of tabpfn
-        if dids == "test": valid_dids_classification = [973, 1596, 40981, 1468, 40984, 40975, 41163, 41147, 1111, 41164, 1169, 1486, 41143, 1461, 41167, 40668, 41146, 41169, 41027, 23517, 41165, 41161, 41159, 41138, 1590, 41166, 1464, 41168, 41150, 1489, 41142, 3, 12, 31, 54, 1067]
-        else: valid_dids_classification = [13, 59, 4, 15, 40710, 43, 1498]
+        self.test_dids_classification = [973, 1111, 1169, 1596, 40981, 41138, 41142, 41143, 41146, 41147, 41150, 41159, 41161, 41163, 41164, 41165, 41166, 41167, 41168, 41169]
+        self.valid_dids_classification = [13, 59, 40710, 43, 1498]
 
         # OpenCC Dids filtered by N_samples < 2000, N feats < 100, N classes < 10
         self.openml_cc18_dids = [3, 6, 11, 12, 14, 15, 16, 18, 22, 23, 28, 29, 31, 32, 37, 44, 46, 50, 54, 151, 182, 188, 38, 307, 300, 458, 469, 554, 1049, 1050, 1053, 1063, 1067, 1068, 1590, 4134, 1510, 1489, 1494, 1497, 1501, 1480, 1485, 1486, 1487, 1468, 1475, 1462, 1464, 4534, 6332, 1461, 4538, 1478, 23381, 40499, 40668, 40966, 40982, 40994, 40983, 40975, 40984, 40979, 40996, 41027, 23517, 40923, 40927, 40978, 40670, 40701]
@@ -27,23 +27,50 @@ class EvalHelper:
         for did in self.openml_cc18_dids:
             self.openml_cc18_dataset_data[did] = load_openml_list([did], num_feats=99999, max_samples=999999, max_num_classes=999)[0]
         
-        self.openml_cc18_dataset_data_lim = {}
+        self.limit_dict = {}
 
         # Validation and so on - not OpenML cc18
-        print("Loading validation Datasets ...")    
-        self.dids = dids
-        self.datasets_data, _ = load_openml_list(valid_dids_classification)
+        print("Loading validation Datasets ...")   
+
+        self.openml_valid_dataset_data = {}
+        for did in self.valid_dids_classification:
+            self.openml_valid_dataset_data[did] = load_openml_list(did, num_feats=99999, max_samples=999999, max_num_classes=999)[0]
+        for did in self.test_dids_classification:
+            self.openml_valid_dataset_data[did] = load_openml_list(did, num_feats=99999, max_samples=999999, max_num_classes=999)[0]
+
 
 
     
-    def do_evaluation(self, model, bptt, eval_positions, metric, device, method_name):
+    def do_evaluation(self, model, bptt, eval_positions, metric, device, method_name, max_classes=10, max_features=100, max_time=300):
         '''
         Evaluation on the validation set for everything.
         '''
-        
-        result = evaluate(self.datasets_data, bptt, eval_positions, metric, model, device,method_name=method_name)
+        results = {}
 
-        return result['mean_metric']
+        self.make_limit_datasets(max_classes, max_features, self.valid_dids_classification)
+
+        for did in self.valid_dids_classification:
+            results[did] = evaluate(self.limit_dict[did], bptt, eval_positions, metric, model, device,method_name=method_name)["mean_metric"]
+
+        vals = results.values()
+
+        return sum(vals) / len(vals)
+    
+
+    def do_test(self, model, bptt, eval_positions, metric, device, method_name, max_classes=10, max_features=100, max_time=300):
+        '''
+        Test on the validation set for everything.
+        '''
+        results = {}
+
+        self.make_limit_datasets(max_classes, max_features, self.test_dids_classification)
+
+        for did in self.test_dids_classification:
+            results[did] = evaluate(self.limit_dict[did], bptt, eval_positions, metric, model, device,method_name=method_name)["mean_metric"]
+
+        vals = results.values()
+
+        return sum(vals) / len(vals)
     
     
     def limit_dataset(self, ds_name, X, y, categorical_feats, max_classes, max_features):
@@ -79,7 +106,7 @@ class EvalHelper:
         for did in limit_dids:
             ds_name, X, y, categorical_feats, _, _ = self.openml_cc18_dataset_data[did][0]
             new_data = self.limit_dataset(ds_name, X, y, categorical_feats, max_classes, max_features)
-            self.openml_cc18_dataset_data_lim[did] = [new_data]
+            self.limit_dict[did] = [new_data]
 
     
 
@@ -90,7 +117,7 @@ class EvalHelper:
         '''
 
         # Standard case: Normal eval dataset
-        if evaluation_type not in ["openmlcc18", "openmlcc18_large"]: return evaluate(self.datasets_data, bptt, eval_positions, metric, model, device,method_name=method_name, max_time=max_time)['mean_metric']
+        if evaluation_type not in ["openmlcc18", "openmlcc18_large"]: return None
 
         # The dataset to iterate over
         ds = None
@@ -104,11 +131,11 @@ class EvalHelper:
         result = {}
 
         for did_idx, did in enumerate(ds):
-            result[did] = evaluate(self.openml_cc18_dataset_data_lim[did], bptt, eval_positions, metric, model, device, method_name=method_name, max_time=max_time)["mean_metric"].item()
+            result[did] = evaluate(self.limit_dict[did], bptt, eval_positions, metric, model, device, method_name=method_name, max_time=max_time)["mean_metric"].item()
 
         return result
 
-    
+    ''' Need to fix this later
     def do_naive_evaluation(self):
 
         performances = []
@@ -129,7 +156,6 @@ class EvalHelper:
 
         return sum(performances) / len(performances)
 
-
     def log_wandb_naive_evaluation(self, num_steps=100, log_name="mamba_mean_acc"):
 
         wandb_project = "mamba_project"
@@ -145,10 +171,11 @@ class EvalHelper:
         for _ in range(num_steps): wandb.log({f"test/{log_name}": naive_result}) 
 
         wandb_run.finish()
+    '''
 
 
 if __name__ == "__main__":
-    h = EvalHelper()
+    h = EvalHelper(dids="test")
     #h.do_naive_evaluation()
     #h.log_wandb_naive_evaluation(num_steps=200, log_name="mamba_mean_acc")
 

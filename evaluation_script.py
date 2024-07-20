@@ -27,12 +27,11 @@ max_time = 3600
 
 device = "cuda"
 
+eval_helper = EvalHelper()
+
 def do_evaluation(eval_list):
 
     result_dict = {}
-
-    # Set up the evaluation Helper class
-    eval_helper = EvalHelper()
 
     #
     # MAMBA EVALUATION
