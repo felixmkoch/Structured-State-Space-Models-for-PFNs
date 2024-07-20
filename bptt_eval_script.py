@@ -6,33 +6,54 @@ from evaluation_helper import EvalHelper
 from tabpfn.scripts.mamba_prediction_interface import load_model_workflow as mamba_load_model_workflow
 from tabpfn.scripts.transformer_prediction_interface import load_model_workflow as transformer_load_model_workflow
 from tabpfn.scripts.tabular_baselines import *
+from scipy import stats
 
 import pandas as pd
 
-EVALUATION_TYPE = "openmlcc18_large"
-#EVALUATION_TYPE = "openmlcc18"
 
-EVALUATION_METHODS = ["mamba", "transformer"]
+#EVALUATION_TYPE = "openmlcc18_large"
+EVALUATION_TYPE = "openmlcc18"
+
+EVALUATION_METHODS = ["mamba"]
 
 METRIC_USED = tabular_metrics.auc_metric
 
 RESULT_CSV_SAVE_DIR = os.path.join("result_csvs", "bptt_cc18_large_cropped.csv")
 
 #MAMBA_MODEL_NAME = "tabpfn/models_diff/mamba_test_model.cpkt"
-MAMBA_MODEL_NAME = "tabpfn/models_diff/mamba_current.cpkt"
+MAMBA_MODEL_NAME = "tabpfn/models_diff/mamba_150e.cpkt"
 TRANSFORMER_MODEL_NAME = "tabpfn/models_diff/transformer_120e_tabpfn.cpkt"
 
 #BPTTS = [i for i in range(50, 2500, 50)]
 BPTTS = [100, 150]
+SPLIT_NUMBERS = [1, 2, 3, 4, 5]
+CONFIDENCE_LEVEL = 0.95
 
 device = "cuda:0"
+
+# Set up the evaluation Helper class
+eval_helper = EvalHelper()
+
+def calc_confidence_interval(data):
+
+    mean = np.mean(data)
+
+    sem = stats.sem(data)
+
+    confidence_level = CONFIDENCE_LEVEL
+    degrees_of_freedom = len(data) - 1
+    t_score = stats.t.ppf((1 + confidence_level) / 2, degrees_of_freedom)
+
+    margin_of_error = t_score * sem
+
+    confidence_interval = (mean - margin_of_error, mean + margin_of_error)
+
+    return confidence_interval
+
 
 def do_evaluation(eval_list, bptt):
 
     result_dict = {}
-
-    # Set up the evaluation Helper class
-    eval_helper = EvalHelper()
 
     #
     # MAMBA EVALUATION
@@ -47,7 +68,7 @@ def do_evaluation(eval_list, bptt):
 
         # Key is the dataset id (did) and value the mean error on it.
         result_dict["mamba"] = eval_helper.do_evaluation_custom(mamba_model, bptt=bptt, eval_positions=mamba_config["eval_positions"], metric=METRIC_USED, device=device, method_name="mamba",
-                                        evaluation_type=EVALUATION_TYPE)
+                                        evaluation_type=EVALUATION_TYPE, split_numbers=SPLIT_NUMBERS)
 
     #
     # TRANSFORMER EVALUATION
@@ -62,7 +83,7 @@ def do_evaluation(eval_list, bptt):
 
         # Key is the dataset id (did) and value the mean error on it.
         result_dict["transformer"] = eval_helper.do_evaluation_custom(transformer_model, bptt=bptt, eval_positions=transformer_config["eval_positions"], metric=METRIC_USED, device=device, method_name="transformer",
-                                        evaluation_type=EVALUATION_TYPE)
+                                        evaluation_type=EVALUATION_TYPE, split_numbers=SPLIT_NUMBERS)
     
 
     return result_dict
@@ -76,16 +97,25 @@ if __name__ == "__main__":
     count = len(EVALUATION_METHODS) * len(BPTTS)
     counter = 1
 
+    EVALUATION_METHOD_HEADER = []
+    for m in EVALUATION_METHODS:
+        EVALUATION_METHOD_HEADER.append(m)
+        EVALUATION_METHOD_HEADER.append(m+"_clow")
+        EVALUATION_METHOD_HEADER.append(m+"_chigh")
+
     for method in EVALUATION_METHODS:
         bptt_dict[method] = {}
         for bptt in BPTTS:
+            bptt_dict[method][bptt] = []
             print(f"Currently at {counter} / {count}")
             counter += 1
             result_dict = do_evaluation(method, bptt)[method]
             vals = result_dict.values()
-            bptt_dict[method][bptt] = sum(vals) / len(vals)
+            for i in range(len(SPLIT_NUMBERS)):
+                s_res = [x[i] for x in vals]
+                bptt_dict[method][bptt].append(sum(s_res) / len(s_res)) # Mean of the split
 
-    header = ["bptt"] + EVALUATION_METHODS
+    header = ["bptt"] + EVALUATION_METHOD_HEADER
 
     result_arr = []
 
@@ -93,7 +123,11 @@ if __name__ == "__main__":
         to_add = [bptt]
 
         for method in EVALUATION_METHODS: 
-            to_add.append(bptt_dict[method][bptt])
+            split_vals = bptt_dict[method][bptt] # arr split values
+            to_add.append(sum(split_vals) / len(split_vals)) # Normal mean
+            conf_interval = calc_confidence_interval(split_vals)
+            to_add.append(conf_interval[0]) # Lower Confidence
+            to_add.append(conf_interval[1]) # Upper Confidence
 
         result_arr.append(to_add)
 
