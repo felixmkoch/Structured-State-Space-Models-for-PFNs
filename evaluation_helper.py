@@ -22,23 +22,19 @@ class EvalHelper:
         self.openml_cc18_dids_small = [11, 14, 15, 16, 18, 22, 23, 29, 31, 37, 50, 54, 188, 458, 469, 1049, 1050, 1063, 1068, 1462, 1464, 1480, 1494, 1510, 6332, 23381, 40966, 40975, 40982, 40994]
         self.openml_cc18_dids_large = [3, 6, 12, 28, 32, 38, 44, 46, 151, 182, 300, 307, 554, 1053, 1067, 1461, 1468, 1475, 1478, 1485, 1486, 1487, 1489, 1497, 1501, 1590, 4134, 4534, 4538, 23517, 40499, 40668, 40670, 40701, 40923, 40927, 40978, 40979, 40983, 40984, 40996, 41027]
 
-        print("Loading the OpenML cc18 Dicts ...")
-        self.openml_cc18_dataset_data = {}
-        for did in self.openml_cc18_dids:
-            self.openml_cc18_dataset_data[did] = load_openml_list([did], num_feats=99999, max_samples=999999, max_num_classes=999)[0]
-        
+        all_dids = self.openml_cc18_dids + self.test_dids_classification + self.valid_dids_classification
+
+        self.datasets_data = {}
         self.limit_dict = {}
 
-        # Validation and so on - not OpenML cc18
-        print("Loading validation Datasets ...")   
 
-        self.openml_valid_dataset_data = {}
-        for did in self.valid_dids_classification:
-            self.openml_valid_dataset_data[did] = load_openml_list([did], num_feats=99999, max_samples=999999, max_num_classes=999)[0]
-        for did in self.test_dids_classification:
-            self.openml_valid_dataset_data[did] = load_openml_list([did], num_feats=99999, max_samples=999999, max_num_classes=999)[0]
+    def check_datasets_data(self, dids):
 
+        data_keys = list(self.datasets_data.keys())
 
+        for did in dids:
+            if not did not in data_keys:
+                self.datasets_data[did] = load_openml_list([did], num_feats=99999, max_samples=999999, max_num_classes=999)[0]
 
     
     def do_evaluation(self, model, bptt, eval_positions, metric, device, method_name, max_classes=10, max_features=100, max_time=300):
@@ -46,6 +42,8 @@ class EvalHelper:
         Evaluation on the validation set for everything.
         '''
         results = {}
+
+        self.check_datasets_data(self.valid_dids_classification)
 
         self.make_limit_datasets(max_classes, max_features, self.valid_dids_classification)
 
@@ -62,6 +60,8 @@ class EvalHelper:
         Test on the validation set for everything.
         '''
         results = {}
+
+        self.check_datasets_data(self.test_dids_classification)
 
         self.make_limit_datasets(max_classes, max_features, self.test_dids_classification)
 
@@ -104,7 +104,7 @@ class EvalHelper:
     def make_limit_datasets(self, max_classes, max_features, limit_dids):
 
         for did in limit_dids:
-            ds_name, X, y, categorical_feats, _, _ = self.openml_cc18_dataset_data[did][0]
+            ds_name, X, y, categorical_feats, _, _ = self.datasets_data[did][0]
             new_data = self.limit_dataset(ds_name, X, y, categorical_feats, max_classes, max_features)
             self.limit_dict[did] = [new_data]
 
@@ -121,9 +121,16 @@ class EvalHelper:
 
         # The dataset to iterate over
         ds = None
-        if evaluation_type == "openmlcc18": ds = self.openml_cc18_dids_small
-        if evaluation_type == "openmlcc18_large": ds = self.openml_cc18_dids_large
-        if evaluation_type == "test": ds = self.test_dids_classification
+        if evaluation_type == "openmlcc18": 
+            ds = self.openml_cc18_dids_small
+            self.check_datasets_data(self.openml_cc18_dids_small)
+
+        if evaluation_type == "openmlcc18_large": 
+            ds = self.openml_cc18_dids_large
+            self.check_datasets_data(self.openml_cc18_dids_large)
+        if evaluation_type == "test": 
+            ds = self.test_dids_classification
+            self.check_datasets_data(self.test_dids_classification)
 
         self.make_limit_datasets(max_classes, max_features, ds)
 
