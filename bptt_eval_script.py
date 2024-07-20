@@ -19,11 +19,11 @@ METRIC_USED = tabular_metrics.auc_metric
 RESULT_CSV_SAVE_DIR = os.path.join("result_csvs", "bptt_cc18_large_cropped.csv")
 
 #MAMBA_MODEL_NAME = "tabpfn/models_diff/mamba_test_model.cpkt"
-MAMBA_MODEL_NAME = "../tabpfn/models_diff/mamba_current.cpkt"
-TRANSFORMER_MODEL_NAME = "../tabpfn/models_diff/transformer_120e_tabpfn.cpkt"
+MAMBA_MODEL_NAME = "tabpfn/models_diff/mamba_current.cpkt"
+TRANSFORMER_MODEL_NAME = "tabpfn/models_diff/transformer_120e_tabpfn.cpkt"
 
 #BPTTS = [i for i in range(50, 2500, 50)]
-BPTTS = [10, 20]
+BPTTS = [100, 150]
 
 device = "cuda:0"
 
@@ -81,9 +81,9 @@ if __name__ == "__main__":
         for bptt in BPTTS:
             print(f"Currently at {counter} / {count}")
             counter += 1
-            result_dict = do_evaluation(method, bptt)
+            result_dict = do_evaluation(method, bptt)[method]
             vals = result_dict.values()
-            bptt_dict[bptt] = sum(vals) / len(vals)
+            bptt_dict[method][bptt] = sum(vals) / len(vals)
 
     header = ["bptt"] + EVALUATION_METHODS
 
