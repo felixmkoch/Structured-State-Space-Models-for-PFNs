@@ -123,6 +123,7 @@ class EvalHelper:
         ds = None
         if evaluation_type == "openmlcc18": ds = self.openml_cc18_dids_small
         if evaluation_type == "openmlcc18_large": ds = self.openml_cc18_dids_large
+        if evaluation_type == "test": ds = self.test_dids_classification
 
         self.make_limit_datasets(max_classes, max_features, ds)
 
