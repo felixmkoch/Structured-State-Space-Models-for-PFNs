@@ -55,6 +55,8 @@ def do_evaluation(eval_list, bptt):
 
     result_dict = {}
 
+    eval_position = (bptt / 2) + 1
+
     #
     # MAMBA EVALUATION
     #
@@ -67,7 +69,7 @@ def do_evaluation(eval_list, bptt):
         mamba_model = m_model[2]
 
         # Key is the dataset id (did) and value the mean error on it.
-        result_dict["mamba"] = eval_helper.do_evaluation_custom(mamba_model, bptt=bptt, eval_positions=mamba_config["eval_positions"], metric=METRIC_USED, device=device, method_name="mamba",
+        result_dict["mamba"] = eval_helper.do_evaluation_custom(mamba_model, bptt=bptt, eval_positions=eval_position, metric=METRIC_USED, device=device, method_name="mamba",
                                         evaluation_type=EVALUATION_TYPE, split_numbers=SPLIT_NUMBERS)
 
     #
@@ -82,7 +84,7 @@ def do_evaluation(eval_list, bptt):
         transformer_model = t_model[2]
 
         # Key is the dataset id (did) and value the mean error on it.
-        result_dict["transformer"] = eval_helper.do_evaluation_custom(transformer_model, bptt=bptt, eval_positions=transformer_config["eval_positions"], metric=METRIC_USED, device=device, method_name="transformer",
+        result_dict["transformer"] = eval_helper.do_evaluation_custom(transformer_model, bptt=bptt, eval_positions=eval_position, metric=METRIC_USED, device=device, method_name="transformer",
                                         evaluation_type=EVALUATION_TYPE, split_numbers=SPLIT_NUMBERS)
     
 
