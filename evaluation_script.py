@@ -6,28 +6,45 @@ from evaluation_helper import EvalHelper
 from tabpfn.scripts.mamba_prediction_interface import load_model_workflow as mamba_load_model_workflow
 from tabpfn.scripts.transformer_prediction_interface import load_model_workflow as transformer_load_model_workflow
 from tabpfn.scripts.tabular_baselines import *
+from scipy import stats
 
 import pandas as pd
 
-EVALUATION_TYPE = "openmlcc18_large"
-#EVALUATION_TYPE = "openmlcc18"
+#EVALUATION_TYPE = "openmlcc18_large"
+EVALUATION_TYPE = "openmlcc18"
 
-EVALUATION_METHODS = ["xgboost"]
+EVALUATION_METHODS = ["mamba"]
 
 METRIC_USED = tabular_metrics.auc_metric
 
-RESULT_CSV_SAVE_DIR = os.path.join("result_csvs", "cc18_large_cropped_bpttmax.csv")
+RESULT_CSV_SAVE_DIR = os.path.join("result_csvs", "test.csv")
 
 #MAMBA_MODEL_NAME = "tabpfn/models_diff/mamba_test_model.cpkt"
-MAMBA_MODEL_NAME = "tabpfn/models_diff/mamba_current.cpkt"
+MAMBA_MODEL_NAME = "tabpfn/models_diff/mamba_150e.cpkt"
 TRANSFORMER_MODEL_NAME = "tabpfn/models_diff/transformer_120e_tabpfn.cpkt"
+
+SPLIT_NUMBERS = [1, 2, 3, 4, 5]
 
 bptt_here = 100000
 max_time = 3600
+CONFIDENCE_LEVEL = 0.95
 
-device = "cuda"
+device = "cuda:0"
 
 eval_helper = EvalHelper()
+
+def calc_moe(data):
+
+    sem = stats.sem(data)
+
+    confidence_level = CONFIDENCE_LEVEL
+    degrees_of_freedom = len(data) - 1
+    t_score = stats.t.ppf((1 + confidence_level) / 2, degrees_of_freedom)
+
+    margin_of_error = t_score * sem
+
+    return margin_of_error
+
 
 def do_evaluation(eval_list):
 
@@ -46,7 +63,7 @@ def do_evaluation(eval_list):
 
         # Key is the dataset id (did) and value the mean error on it.
         result_dict["mamba"] = eval_helper.do_evaluation_custom(mamba_model, bptt=bptt_here, eval_positions=mamba_config["eval_positions"], metric=METRIC_USED, device=device, method_name="mamba",
-                                        evaluation_type=EVALUATION_TYPE)
+                                        evaluation_type=EVALUATION_TYPE, split_numbers=SPLIT_NUMBERS)
 
     #
     # TRANSFORMER EVALUATION
@@ -61,7 +78,7 @@ def do_evaluation(eval_list):
 
         # Key is the dataset id (did) and value the mean error on it.
         result_dict["transformer"] = eval_helper.do_evaluation_custom(transformer_model, bptt=bptt_here, eval_positions=transformer_config["eval_positions"], metric=METRIC_USED, device=device, method_name="transformer",
-                                        evaluation_type=EVALUATION_TYPE)
+                                        evaluation_type=EVALUATION_TYPE, split_numbers=SPLIT_NUMBERS)
 
 
     #
@@ -92,7 +109,7 @@ def do_evaluation(eval_list):
     return result_dict
 
 
-
+# This needs rework at some time. Super not efficient.
 if __name__ == "__main__":
 
     result_dict = do_evaluation(EVALUATION_METHODS)
@@ -101,13 +118,29 @@ if __name__ == "__main__":
 
     result_arr = []
 
+    # Calc Mean and Confidence Intervals
+    for method in EVALUATION_METHODS:
+        split_means = []
+
+        for split in range(len(SPLIT_NUMBERS)):
+            vals = result_dict[method].values()
+            split_errs = [x[split] for x in vals]
+            split_means.append(sum(split_errs) / len(split_errs))
+
+        print(f"{method} Stats: ")
+        print(f"Split Means: {split_means}")
+        print(f"Mean Overall: {sum(split_means) / len(split_means)}")
+        print(f"MOE: {calc_moe(split_means)}")
+
+
     keys = list(result_dict[list(result_dict.keys())[0]].keys())
 
     for key in keys:
         to_add = [key]
 
         for method in EVALUATION_METHODS: 
-            to_add.append(result_dict[method][key])
+            res = result_dict[method][key]
+            to_add.append(sum(res) / len(res))
 
         result_arr.append(to_add)
 

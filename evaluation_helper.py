@@ -34,9 +34,9 @@ class EvalHelper:
 
         self.openml_valid_dataset_data = {}
         for did in self.valid_dids_classification:
-            self.openml_valid_dataset_data[did] = load_openml_list(did, num_feats=99999, max_samples=999999, max_num_classes=999)[0]
+            self.openml_valid_dataset_data[did] = load_openml_list([did], num_feats=99999, max_samples=999999, max_num_classes=999)[0]
         for did in self.test_dids_classification:
-            self.openml_valid_dataset_data[did] = load_openml_list(did, num_feats=99999, max_samples=999999, max_num_classes=999)[0]
+            self.openml_valid_dataset_data[did] = load_openml_list([did], num_feats=99999, max_samples=999999, max_num_classes=999)[0]
 
 
 
@@ -110,14 +110,14 @@ class EvalHelper:
 
     
 
-    def do_evaluation_custom(self, model, bptt, eval_positions, metric, device, method_name, evaluation_type, max_classes=10, max_features=100, max_time=300):
+    def do_evaluation_custom(self, model, bptt, eval_positions, metric, device, method_name, evaluation_type, max_classes=10, max_features=100, max_time=300, split_numbers=[1]):
 
         '''
         Evaluation on customly settable datasets.
         '''
 
         # Standard case: Normal eval dataset
-        if evaluation_type not in ["openmlcc18", "openmlcc18_large"]: return None
+        if evaluation_type not in ["openmlcc18", "openmlcc18_large", "test"]: return None
 
         # The dataset to iterate over
         ds = None
@@ -131,9 +131,11 @@ class EvalHelper:
 
         result = {}
 
-        for did_idx, did in enumerate(ds):
-            result[did] = evaluate(self.limit_dict[did], bptt, eval_positions, metric, model, device, method_name=method_name, max_time=max_time)["mean_metric"].item()
-
+        for did in ds:
+            result[did] = []
+            for split_number in split_numbers:
+                result[did].append(evaluate(self.limit_dict[did], bptt, eval_positions, metric, model, device, method_name=method_name, max_time=max_time, split_number=split_number)["mean_metric"].item())
+                
         return result
 
     ''' Need to fix this later
