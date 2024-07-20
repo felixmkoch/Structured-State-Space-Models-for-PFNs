@@ -55,7 +55,7 @@ def do_evaluation(eval_list, bptt):
 
     result_dict = {}
 
-    eval_position = (bptt / 2) + 1
+    eval_position = [(bptt / 2) + 1]
 
     #
     # MAMBA EVALUATION
