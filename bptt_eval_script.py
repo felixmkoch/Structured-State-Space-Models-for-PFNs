@@ -19,13 +19,13 @@ METRIC_USED = tabular_metrics.auc_metric
 RESULT_CSV_SAVE_DIR = os.path.join("result_csvs", "bptt_cc18_large_cropped.csv")
 
 #MAMBA_MODEL_NAME = "tabpfn/models_diff/mamba_test_model.cpkt"
-MAMBA_MODEL_NAME = "tabpfn/models_diff/mamba_current.cpkt"
-TRANSFORMER_MODEL_NAME = "tabpfn/models_diff/transformer_120e_tabpfn.cpkt"
+MAMBA_MODEL_NAME = "../tabpfn/models_diff/mamba_current.cpkt"
+TRANSFORMER_MODEL_NAME = "../tabpfn/models_diff/transformer_120e_tabpfn.cpkt"
 
 #BPTTS = [i for i in range(50, 2500, 50)]
 BPTTS = [10, 20]
 
-device = "cuda"
+device = "cuda:0"
 
 def do_evaluation(eval_list, bptt):
 
