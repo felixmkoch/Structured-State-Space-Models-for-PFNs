@@ -56,7 +56,7 @@ bptt = 10000 if large_datasets else 3000
 suite='cc'
 
 # Others
-json_file_path = "config.json"
+json_file_path = "tabpfn_original_config.json"
 
 #------------------------------------------------------------------------------------------------
 #                                      END PARAMETER
@@ -81,11 +81,13 @@ config["differentiable_hyperparameters"]["prior_mlp_activations"]["choice_values
 config["num_classes"] = uniform_int_sampler_f(2, config['max_num_classes']) # Wrong Function
 config["num_features_used"] = uniform_int_sampler_f(1, max_features)
 
-config['batch_size'] = 32 # just because we did this in the other config. Would be 64 default
-config['emsize'] = 64 # Default was on 512, just to save some GPU mem.
-config["epochs"] = 2
+config['batch_size'] = 64 # just because we did this in the other config. Would be 64 default
+config['emsize'] = 512 # Default was on 512, just to save some GPU mem.
+config["epochs"] = 120
 
-device = "cuda:0"
+config["bptt"] = 10000
+
+device = "cuda:1"
 
 #------------------------------------------------------------------------------------------------
 #                                         END CONFIG
@@ -125,7 +127,7 @@ config['epoch_in_training'] = config["epochs"]
 # Save Transformer Model
 save_model(transformer_model[2], 
            base_path, 
-           f'models_diff/transformer_test_model.cpkt',
+           f'models_diff/transformer_large.cpkt',
            config
            )
 

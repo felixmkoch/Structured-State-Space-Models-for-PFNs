@@ -47,7 +47,7 @@ bptt = 10000 if large_datasets else 3000
 suite='cc'
 
 # Others
-json_file_path = "config.json"
+json_file_path = "tabpfn_original_config.json"
 
 #------------------------------------------------------------------------------------------------
 #                                      END PARAMETER
@@ -73,10 +73,13 @@ config["num_classes"] = uniform_int_sampler_f(2, config['max_num_classes']) # Wr
 config["num_features_used"] = uniform_int_sampler_f(1, max_features)
 
 config['batch_size'] = 64 # just because we did this in the other config. Would be 64 default
-config['emsize'] = 72 # Default was on 512, just to save some GPU mem.
-config["epochs"] = 2
+config['emsize'] = 1024 # Default was on 512, just to save some GPU mem.
+config["epochs"] = 2500
+config["bptt"] = 10000
 
-config["mamba_num_layers"] = 8
+config["num_steps"] = 16
+
+config["mamba_num_layers"] = 24
 config["mamba_autocast"] = True
 
 device = "cuda:0"
@@ -91,7 +94,7 @@ device = "cuda:0"
 
 wandb_project = "mamba_project"
 wandb_job_type = "create_mamba_model"
-wandb_run_name = f"Mamba {config["mamba_num_layers"]}l {config["emsize"]}e {config["batch_size"]}b"
+wandb_run_name = f"Mamba Large {config['mamba_num_layers']}l {config['emsize']}e {config['batch_size']}b"
 
 wandb_config= config
 
@@ -117,7 +120,7 @@ mamba_model = get_model_mamba(config, device, should_train=True, verbose=1, mamb
 # Save Mamba Model
 save_model(mamba_model[2], 
            base_path, 
-           f'tabpfn/models_diff/mamba_test_50classes_model.cpkt',
+           f'tabpfn/models_diff/mamba_large_2500e.cpkt',
            config
            )
 
