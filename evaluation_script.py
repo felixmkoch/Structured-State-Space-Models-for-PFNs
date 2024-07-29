@@ -21,13 +21,15 @@ RESULT_CSV_SAVE_DIR = os.path.join("result_csvs", "test.csv")
 
 #MAMBA_MODEL_NAME = "tabpfn/models_diff/mamba_test_model.cpkt"
 MAMBA_MODEL_NAME = "tabpfn/models_diff/mamba_150e.cpkt"
-TRANSFORMER_MODEL_NAME = "tabpfn/models_diff/transformer_120e_tabpfn.cpkt"
+TRANSFORMER_MODEL_NAME = "tabpfn/models_diff/tabpfn_transformer_model.cpkt"
 
-SPLIT_NUMBERS = [1, 2, 3, 4, 5]
+SPLIT_NUMBERS = [1]
 
-bptt_here = 100000
+bptt_here = 1000
 max_time = 3600
 CONFIDENCE_LEVEL = 0.95
+
+JRT_PROMPT = False
 
 device = "cuda:0"
 
@@ -63,7 +65,7 @@ def do_evaluation(eval_list):
 
         # Key is the dataset id (did) and value the mean error on it.
         result_dict["mamba"] = eval_helper.do_evaluation_custom(mamba_model, bptt=bptt_here, eval_positions=mamba_config["eval_positions"], metric=METRIC_USED, device=device, method_name="mamba",
-                                        evaluation_type=EVALUATION_TYPE, split_numbers=SPLIT_NUMBERS)
+                                        evaluation_type=EVALUATION_TYPE, split_numbers=SPLIT_NUMBERS, jrt_prompt=JRT_PROMPT)
 
     #
     # TRANSFORMER EVALUATION
@@ -78,7 +80,7 @@ def do_evaluation(eval_list):
 
         # Key is the dataset id (did) and value the mean error on it.
         result_dict["transformer"] = eval_helper.do_evaluation_custom(transformer_model, bptt=bptt_here, eval_positions=transformer_config["eval_positions"], metric=METRIC_USED, device=device, method_name="transformer",
-                                        evaluation_type=EVALUATION_TYPE, split_numbers=SPLIT_NUMBERS)
+                                        evaluation_type=EVALUATION_TYPE, split_numbers=SPLIT_NUMBERS, jrt_prompt=JRT_PROMPT)
 
 
     #

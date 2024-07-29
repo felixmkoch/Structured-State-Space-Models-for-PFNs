@@ -84,6 +84,7 @@ def evaluate(datasets, bptt, eval_positions, metric_used, model, device='cpu'
              , verbose=False
              , return_tensor=False
              , method_name=""
+             , jrt_prompt=False
              , **kwargs):
     """
     Evaluates a list of datasets for a model function.
@@ -110,6 +111,8 @@ def evaluate(datasets, bptt, eval_positions, metric_used, model, device='cpu'
         #if verbose and dataset_bptt < bptt:
         #    print(f'Dataset too small for given bptt, reducing to {len(X)} ({bptt})')
 
+        print(f"Currently at dataset {ds_name}")
+
         aggregated_metric, num = torch.tensor(0.0), 0
         ds_result = {}
 
@@ -131,6 +134,7 @@ def evaluate(datasets, bptt, eval_positions, metric_used, model, device='cpu'
                         , base_path=""
                         , path_interfix=""
                         , method=""
+                        , jrt_promt=jrt_prompt
                         ,**kwargs)
             
 
@@ -235,10 +239,26 @@ def generate_valid_split(X, y, bptt, eval_position, is_classification, split_num
     return eval_xs, eval_ys
 
 
-def evaluate_position(X, y, categorical_feats, model, bptt
-                      , eval_position, overwrite, save, base_path, path_interfix, method, ds_name, fetch_only=False
-                      , max_time=300, split_number=1, metric_used=None, device='cpu', method_name=""
-                      , per_step_normalization=False, **kwargs):
+def evaluate_position(X, 
+                      y, 
+                      categorical_feats, 
+                      model, 
+                      bptt, 
+                      eval_position, 
+                      overwrite, 
+                      save, 
+                      base_path, 
+                      path_interfix, 
+                      method, ds_name, 
+                      fetch_only=False, 
+                      max_time=300, 
+                      split_number=1, 
+                      metric_used=None, 
+                      device='cpu', 
+                      method_name="",
+                      jrt_promt=False, 
+                      per_step_normalization=False, 
+                      **kwargs):
     """
     Evaluates a dataset with a 'bptt' number of training samples.
 
@@ -280,6 +300,7 @@ def evaluate_position(X, y, categorical_feats, model, bptt
                                             , is_classification=tabular_metrics.is_classification(metric_used)
                                             , split_number=split_number)
     
+    if jrt_promt: eval_xs = eval_xs.repeat(2, 1, 1)
     
     if eval_xs is None:
         print(f"No dataset could be generated {ds_name} {bptt}")

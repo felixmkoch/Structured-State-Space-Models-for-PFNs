@@ -110,7 +110,19 @@ class EvalHelper:
 
     
 
-    def do_evaluation_custom(self, model, bptt, eval_positions, metric, device, method_name, evaluation_type, max_classes=10, max_features=100, max_time=300, split_numbers=[1]):
+    def do_evaluation_custom(self, 
+                             model, 
+                             bptt, 
+                             eval_positions, 
+                             metric, 
+                             device, 
+                             method_name, 
+                             evaluation_type, 
+                             max_classes=10, 
+                             max_features=100, 
+                             max_time=300, 
+                             split_numbers=[1],
+                             jrt_prompt=False):
 
         '''
         Evaluation on customly settable datasets.
@@ -141,7 +153,7 @@ class EvalHelper:
         for did in ds:
             result[did] = []
             for split_number in split_numbers:
-                result[did].append(evaluate(self.limit_dict[did], bptt, eval_positions, metric, model, device, method_name=method_name, max_time=max_time, split_number=split_number)["mean_metric"].item())
+                result[did].append(evaluate(self.limit_dict[did], bptt, eval_positions, metric, model, device, method_name=method_name, max_time=max_time, split_number=split_number, jrt_prompt=jrt_prompt)["mean_metric"].item())
                 
         return result
 
