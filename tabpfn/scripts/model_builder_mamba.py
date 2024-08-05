@@ -198,7 +198,7 @@ def get_meta_gp_prior_hyperparameters(config):
 #                                    MAMBA MODEL GETTER
 #------------------------------------------------------------------------------------------------
 
-def get_model_mamba(config, device, should_train=True, verbose=False, state_dict=None, epoch_callback=None, mamba_autocast=True, evaluation_class=None):
+def get_model_mamba(config, device, should_train=True, verbose=False, state_dict=None, epoch_callback=None, mamba_autocast=True, evaluation_class=None, permutation_repeat=0):
 
     #------------------------------------------------------------------------------------------------
     #                                    CONFIG STUFF
@@ -351,6 +351,7 @@ def get_model_mamba(config, device, should_train=True, verbose=False, state_dict
                   , num_mamba_layers=config['mamba_num_layers']
                   , verbose=verbose_train
                   , evaluation_class=evaluation_class
+                  , permutation_repeat=permutation_repeat
                   , weight_decay=config.get('weight_decay', 0.0)
             )
 

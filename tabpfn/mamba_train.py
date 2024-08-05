@@ -50,6 +50,24 @@ class Losses():
 #------------------------------------------------------------------------------------------------
 
 #------------------------------------------------------------------------------------------------
+#                                  HELPER FUNCTIONS
+#------------------------------------------------------------------------------------------------
+
+def permute_data(data, targets):
+
+    # Get the permutation of indices
+    permutation = torch.randperm(data[1].size(0))
+
+    data_return = (None, data[1][permutation], data[2][permutation])
+    targets_return = targets[permutation]
+
+    return data_return, targets_return
+
+#------------------------------------------------------------------------------------------------
+#                                 END HELPER FUNCTIONS
+#------------------------------------------------------------------------------------------------
+
+#------------------------------------------------------------------------------------------------
 #                                MAMBA TRAIN FUNCTION
 #------------------------------------------------------------------------------------------------
 
@@ -87,7 +105,8 @@ def train_mamba(priordataloader_class,
           train_mixed_precision=False,
           enable_autocast=True,
           num_mamba_layers=2,
-          evaluation_class=None, 
+          evaluation_class=None,
+          permutation_repeat=0,     # For each data-target-pair, we repeat the training permutation_repeat times with different data positions.
           **model_extra_args
           ):
     
@@ -145,7 +164,7 @@ def train_mamba(priordataloader_class,
     # Check if model should be loaded from state dict
     mamba_model.criterion = criterion
 
-    #print(f"Using a Transformer with {sum(p.numel() for p in model.parameters())/1000/1000:.{2}f} M parameters")
+    print(f"Using Mamba with {sum(p.numel() for p in mamba_model.parameters())/1000/1000:.{2}f} M parameters")
 
     #try:
     #    for (k, v), (k2, v2) in zip(model.state_dict().items(), initialize_with_model.state_dict().items()):
@@ -187,95 +206,98 @@ def train_mamba(priordataloader_class,
         
         for batch, (data, targets, single_eval_pos) in enumerate(dl):
 
-            #print(f"Currently in batch {batch + 1} out of {len(dl)} batches")
-            
-            if using_dist and not (batch % aggregate_k_gradients == aggregate_k_gradients - 1):
-                cm = mamba_model.no_sync()
-            else:
-                cm = nullcontext()
-            with cm:
-                time_to_get_batch = time.time() - before_get_batch
-                before_forward = time.time()
-                if bptt_extra_samples is None:
-                    single_eval_pos = single_eval_pos_gen() if callable(single_eval_pos_gen) else single_eval_pos_gen
+            for repeat in range(permutation_repeat + 1):
+
+                if repeat > 0:   # Then shuffle
+                    data, targets = permute_data(data, targets)
+
+                if using_dist and not (batch % aggregate_k_gradients == aggregate_k_gradients - 1):
+                    cm = mamba_model.no_sync()
                 else:
-                    single_eval_pos = targets.shape[0] - bptt_extra_samples
-
-                with autocast(enabled=scaler is not None):
-                    # If style is set to None, it should not be transferred to device
-                    output = mamba_model(
-                        tuple(
-                            e.to(device) if torch.is_tensor(e) else e 
-                            for e in data
-                            ) 
-                            if isinstance(data, tuple)
-
-                        else data.to(device), 
-                        single_eval_pos=single_eval_pos)
-
-                    forward_time = time.time() - before_forward
-
-                    #print(f"Out shape: {output.size()}")
-                    #print(f"Targets shape: {targets.size()}")
-
-                    if single_eval_pos is not None:
-                        targets = targets[single_eval_pos:]
-                    if isinstance(criterion, nn.GaussianNLLLoss):
-                        assert output.shape[-1] == 2, \
-                            'need to write a little bit of code to handle multiple regression targets at once'
-
-                        mean_pred = output[..., 0]
-                        var_pred = output[..., 1].abs()
-                        losses = criterion(mean_pred.flatten(), targets.to(device).flatten(), var=var_pred.flatten())
-                    elif isinstance(criterion, (nn.MSELoss, nn.BCEWithLogitsLoss)):
-                        losses = criterion(output.flatten(), targets.to(device).flatten())
-                    elif isinstance(criterion, nn.CrossEntropyLoss):
-                        # Original: losses = criterion(output.reshape(-1, n_out), targets.to(device).long().flatten())
-                        # Done with single_eval_pos -> TODO
-                        losses = criterion(output.reshape(-1, n_out), targets.to(device).long().flatten())
+                    cm = nullcontext()
+                with cm:
+                    time_to_get_batch = time.time() - before_get_batch
+                    before_forward = time.time()
+                    if bptt_extra_samples is None:
+                        single_eval_pos = single_eval_pos_gen() if callable(single_eval_pos_gen) else single_eval_pos_gen
                     else:
-                        losses = criterion(output, targets)
-                    losses = losses.view(*output.shape[0:2])
-                    #print(f"Loss is: {losses}")
-                    #time.sleep(10)
-                    loss, nan_share = utils.torch_nanmean(losses.mean(0), return_nanshare=True)
-                    loss = loss / aggregate_k_gradients
-                    #print(f"Loss afterwards is: {loss}")
+                        single_eval_pos = targets.shape[0] - bptt_extra_samples
 
-                if scaler: loss = scaler.scale(loss)
-                #print(f"Loss inverted is: {loss}")
-                loss.backward()
+                    with autocast(enabled=scaler is not None):
+                        # If style is set to None, it should not be transferred to device
+                        output = mamba_model(
+                            tuple(
+                                e.to(device) if torch.is_tensor(e) else e 
+                                for e in data
+                                ) 
+                                if isinstance(data, tuple)
 
-                if batch % aggregate_k_gradients == aggregate_k_gradients - 1:
-                    if scaler: scaler.unscale_(optimizer)
-                    torch.nn.utils.clip_grad_norm_(mamba_model.parameters(), 1.)
-                    try:
-                        if scaler:
-                            scaler.step(optimizer)
-                            scaler.update()
+                            else data.to(device), 
+                            single_eval_pos=single_eval_pos)
+
+                        forward_time = time.time() - before_forward
+
+                        #print(f"Out shape: {output.size()}")
+                        #print(f"Targets shape: {targets.size()}")
+
+                        if single_eval_pos is not None:
+                            targets = targets[single_eval_pos:]
+                        if isinstance(criterion, nn.GaussianNLLLoss):
+                            assert output.shape[-1] == 2, \
+                                'need to write a little bit of code to handle multiple regression targets at once'
+
+                            mean_pred = output[..., 0]
+                            var_pred = output[..., 1].abs()
+                            losses = criterion(mean_pred.flatten(), targets.to(device).flatten(), var=var_pred.flatten())
+                        elif isinstance(criterion, (nn.MSELoss, nn.BCEWithLogitsLoss)):
+                            losses = criterion(output.flatten(), targets.to(device).flatten())
+                        elif isinstance(criterion, nn.CrossEntropyLoss):
+                            # Original: losses = criterion(output.reshape(-1, n_out), targets.to(device).long().flatten())
+                            # Done with single_eval_pos -> TODO
+                            losses = criterion(output.reshape(-1, n_out), targets.to(device).long().flatten())
                         else:
-                            optimizer.step()
-                    except:
-                        print("Invalid optimization step encountered")
-                    optimizer.zero_grad()
+                            losses = criterion(output, targets)
+                        losses = losses.view(*output.shape[0:2])
+                        #print(f"Loss is: {losses}")
+                        #time.sleep(10)
+                        loss, nan_share = utils.torch_nanmean(losses.mean(0), return_nanshare=True)
+                        loss = loss / aggregate_k_gradients
+                        #print(f"Loss afterwards is: {loss}")
 
-                step_time = time.time() - before_forward
+                    if scaler: loss = scaler.scale(loss)
+                    #print(f"Loss inverted is: {loss}")
+                    loss.backward()
 
-                if not torch.isnan(loss):
-                    total_loss += losses.mean().cpu().detach().item()
-                    total_positional_losses += losses.mean(1).cpu().detach() if single_eval_pos is None else \
-                        nn.functional.one_hot(torch.tensor(single_eval_pos), bptt)*\
-                        losses[:bptt-single_eval_pos].mean().cpu().detach()
+                    if batch % aggregate_k_gradients == aggregate_k_gradients - 1:
+                        if scaler: scaler.unscale_(optimizer)
+                        torch.nn.utils.clip_grad_norm_(mamba_model.parameters(), 1.)
+                        try:
+                            if scaler:
+                                scaler.step(optimizer)
+                                scaler.update()
+                            else:
+                                optimizer.step()
+                        except:
+                            print("Invalid optimization step encountered")
+                        optimizer.zero_grad()
 
-                    total_positional_losses_recorded += torch.ones(bptt) if single_eval_pos is None else \
-                        nn.functional.one_hot(torch.tensor(single_eval_pos), bptt)
-                    
-                    #print(f"Total Positional Losses: {total_positional_losses}")
-                    #print(f"Total Positional Losses Recorded: {total_positional_losses_recorded}")
-                nan_steps += nan_share
-                ignore_steps += (targets == -100).float().mean()
+                    step_time = time.time() - before_forward
 
-            before_get_batch = time.time()
+                    if not torch.isnan(loss):
+                        total_loss += losses.mean().cpu().detach().item()
+                        total_positional_losses += losses.mean(1).cpu().detach() if single_eval_pos is None else \
+                            nn.functional.one_hot(torch.tensor(single_eval_pos), bptt)*\
+                            losses[:bptt-single_eval_pos].mean().cpu().detach()
+
+                        total_positional_losses_recorded += torch.ones(bptt) if single_eval_pos is None else \
+                            nn.functional.one_hot(torch.tensor(single_eval_pos), bptt)
+                        
+                        #print(f"Total Positional Losses: {total_positional_losses}")
+                        #print(f"Total Positional Losses Recorded: {total_positional_losses_recorded}")
+                    nan_steps += nan_share
+                    ignore_steps += (targets == -100).float().mean()
+
+                before_get_batch = time.time()
             
             
         return total_loss / steps_per_epoch, \

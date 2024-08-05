@@ -72,15 +72,16 @@ config["differentiable_hyperparameters"]["prior_mlp_activations"]["choice_values
 config["num_classes"] = uniform_int_sampler_f(2, config['max_num_classes']) # Wrong Function
 config["num_features_used"] = uniform_int_sampler_f(1, max_features)
 
-config['batch_size'] = 64 # just because we did this in the other config. Would be 64 default
-config['emsize'] = 1024 # Default was on 512, just to save some GPU mem.
+config['batch_size'] = 32 # just because we did this in the other config. Would be 64 default
+config['emsize'] = 32 # Default was on 512, just to save some GPU mem.
 config["epochs"] = 2500
-config["bptt"] = 10000
+config["bptt"] = 20
 
-config["num_steps"] = 16
+config["num_steps"] = 2
 
-config["mamba_num_layers"] = 24
+config["mamba_num_layers"] = 2
 config["mamba_autocast"] = True
+config["permutation_repeat"] = 0
 
 device = "cuda:0"
 
@@ -113,7 +114,14 @@ eval_class = EvalHelper()
 
 # Get the model 
 #model = get_model(config, device, should_train=True, verbose=0) # , state_dict=model[2].state_dict()
-mamba_model = get_model_mamba(config, device, should_train=True, verbose=1, mamba_autocast=config["mamba_autocast"], evaluation_class=eval_class) # , state_dict=model[2].state_dict()
+mamba_model = get_model_mamba(config, 
+                              device, 
+                              should_train=True, 
+                              verbose=1, 
+                              mamba_autocast=config["mamba_autocast"], 
+                              evaluation_class=eval_class,
+                              permutation_repeat=config["permutation_repeat"]
+                              ) # , state_dict=model[2].state_dict()
 
 (hp_embedding, data, _), targets, single_eval_pos = next(iter(mamba_model[3]))
 
