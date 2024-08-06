@@ -300,7 +300,9 @@ def evaluate_position(X,
                                             , is_classification=tabular_metrics.is_classification(metric_used)
                                             , split_number=split_number)
     
-    if jrt_promt: eval_xs = eval_xs.repeat(2, 1, 1)
+    if jrt_promt: 
+        eval_xs = eval_xs.repeat(2, 1, 1)
+        eval_ys = eval_ys.repeat(2, 1)
     
     if eval_xs is None:
         print(f"No dataset could be generated {ds_name} {bptt}")
