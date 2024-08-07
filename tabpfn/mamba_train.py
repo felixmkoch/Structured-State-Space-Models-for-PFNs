@@ -221,6 +221,8 @@ def train_mamba(priordataloader_class,
         
         for batch, (data, targets, single_eval_pos) in enumerate(dl):
 
+            print(f"In Batch: {batch}")
+
             targets_original = targets
 
             for repeat in range(permutation_repeat + 1):
