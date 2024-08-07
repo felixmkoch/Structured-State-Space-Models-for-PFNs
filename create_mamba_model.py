@@ -102,7 +102,7 @@ wandb_run_name = f"Mamba Large {config['mamba_num_layers']}l {config['emsize']}e
 
 wandb_config= config
 
-wandb_run = wandb.init(project=wandb_project,job_type=wandb_job_type,config=wandb_config, name=wandb_run_name)
+wandb_run = wandb.init(project=wandb_project,job_type=wandb_job_type,config=wandb_config, name=wandb_run_name, group="DDP")
 
 #------------------------------------------------------------------------------------------------
 #                                         END WANDB
