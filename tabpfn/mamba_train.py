@@ -107,6 +107,7 @@ def train_mamba(priordataloader_class,
           num_mamba_layers=2,
           evaluation_class=None,
           permutation_repeat=0,     # For each data-target-pair, we repeat the training permutation_repeat times with different data positions.
+          enable_data_parallel=False,
           **model_extra_args
           ):
     
@@ -177,6 +178,12 @@ def train_mamba(priordataloader_class,
     
     # Init Data Loader and Optimizer
     dl.model = mamba_model
+
+    # Distributed Mode
+    if enable_data_parallel:
+        print("Distributed Training")
+        mamba_model = torch.nn.DataParallel(mamba_model)
+
     optimizer = torch.optim.AdamW(mamba_model.parameters(), lr=lr, weight_decay=weight_decay)
     scheduler = scheduler(optimizer, warmup_epochs, epochs if epochs is not None else 100) # when training for fixed time lr schedule takes 100 steps
     scaler = GradScaler() if enable_autocast else None

@@ -77,13 +77,14 @@ config['emsize'] = 32 # Default was on 512, just to save some GPU mem.
 config["epochs"] = 2500
 config["bptt"] = 20
 
-config["num_steps"] = 2
+config["num_steps"] = 4
 
-config["mamba_num_layers"] = 2
+config["mamba_num_layers"] = 4
 config["mamba_autocast"] = True
-config["permutation_repeat"] = 0
+config["permutation_repeat"] = 1
 
 device = "cuda:0"
+ENABLE_DATA_PARALLEL = True
 
 #------------------------------------------------------------------------------------------------
 #                                         END CONFIG
@@ -120,7 +121,8 @@ mamba_model = get_model_mamba(config,
                               verbose=1, 
                               mamba_autocast=config["mamba_autocast"], 
                               evaluation_class=eval_class,
-                              permutation_repeat=config["permutation_repeat"]
+                              permutation_repeat=config["permutation_repeat"],
+                              enable_data_parallel=ENABLE_DATA_PARALLEL
                               ) # , state_dict=model[2].state_dict()
 
 (hp_embedding, data, _), targets, single_eval_pos = next(iter(mamba_model[3]))
