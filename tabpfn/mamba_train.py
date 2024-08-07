@@ -53,13 +53,21 @@ class Losses():
 #                                  HELPER FUNCTIONS
 #------------------------------------------------------------------------------------------------
 
-def permute_data(data, targets):
+def permute_data(data, targets, device="cuda:1"):
+
+    # NOTE: This is a quick fix until multi-GPU support is there.
+
+    to_device_tmp = "cuda:0"
 
     # Get the permutation of indices
     permutation = torch.randperm(data[1].size(0))
 
-    data_return = (None, data[1][permutation], data[2][permutation])
-    targets_return = targets[permutation]
+    data_return = (None, data[1].to(to_device_tmp)[permutation], data[2].to(to_device_tmp)[permutation])
+    targets_return = targets.to(to_device_tmp)[permutation]
+
+    data_return[1].to(device)
+    data_return[2].to(device)
+    targets_return.to(device)
 
     return data_return, targets_return
 
@@ -179,10 +187,6 @@ def train_mamba(priordataloader_class,
     
     # Init Data Loader and Optimizer
     dl.model = mamba_model
-
-    # Distributed Mode
-    print(f"Enab {enable_data_parallel}")
-    print(f"ddd: {using_dist}")
     if enable_data_parallel and using_dist:
         print("Distributed Training")
         mamba_model = torch.nn.parallel.DistributedDataParallel(mamba_model, device_ids=[rank], output_device=rank, broadcast_buffers=False)
