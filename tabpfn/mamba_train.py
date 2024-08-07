@@ -235,9 +235,13 @@ def train_mamba(priordataloader_class,
                     with autocast(enabled=scaler is not None):
                         # If style is set to None, it should not be transferred to device
                         output = mamba_model(
+                            #tuple(
+                            #    e.to(device) if torch.is_tensor(e) else e 
+                            #    for e in data
+                            #    ) 
+                            #    if isinstance(data, tuple)
                             tuple(
-                                e.to(device) if torch.is_tensor(e) else e 
-                                for e in data
+                                e for e in data
                                 ) 
                                 if isinstance(data, tuple)
 
