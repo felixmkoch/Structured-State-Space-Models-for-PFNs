@@ -121,7 +121,6 @@ def train_mamba(priordataloader_class,
     
     device = gpu_device if torch.cuda.is_available() else 'cpu:0'
     print(f'Using {device} device')
-    print(f"Env: {os.environ['SLURM_PROCID']}")
     using_dist, rank, device = init_dist(device)
     single_eval_pos_gen = single_eval_pos_gen if callable(single_eval_pos_gen) else lambda: single_eval_pos_gen
 
