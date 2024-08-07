@@ -309,7 +309,7 @@ def train_mamba(priordataloader_class,
                         #print(f"Total Positional Losses: {total_positional_losses}")
                         #print(f"Total Positional Losses Recorded: {total_positional_losses_recorded}")
                     nan_steps += nan_share
-                    ignore_steps += (targets == -100).float().mean()
+                    #ignore_steps += (targets == -100).float().mean()
 
                 before_get_batch = time.time()
             
@@ -320,7 +320,8 @@ def train_mamba(priordataloader_class,
                 forward_time, \
                 step_time, \
                 nan_steps.cpu().item()/(batch+1),\
-                ignore_steps.cpu().item()/(batch+1)
+                0
+                #ignore_steps.cpu().item()/(batch+1)
                
     #
     # END Train Function
