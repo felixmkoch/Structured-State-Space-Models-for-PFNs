@@ -113,6 +113,7 @@ def train_mamba(priordataloader_class,
     
     device = gpu_device if torch.cuda.is_available() else 'cpu:0'
     print(f'Using {device} device')
+    print(f"Env: {os.environ['SLURM_PROCID']}")
     using_dist, rank, device = init_dist(device)
     single_eval_pos_gen = single_eval_pos_gen if callable(single_eval_pos_gen) else lambda: single_eval_pos_gen
 
@@ -180,9 +181,11 @@ def train_mamba(priordataloader_class,
     dl.model = mamba_model
 
     # Distributed Mode
-    if enable_data_parallel:
+    print(f"Enab {enable_data_parallel}")
+    print(f"ddd: {using_dist}")
+    if enable_data_parallel and using_dist:
         print("Distributed Training")
-        mamba_model = torch.nn.DataParallel(mamba_model)
+        mamba_model = torch.nn.parallel.DistributedDataParallel(mamba_model, device_ids=[rank], output_device=rank, broadcast_buffers=False)
 
     optimizer = torch.optim.AdamW(mamba_model.parameters(), lr=lr, weight_decay=weight_decay)
     scheduler = scheduler(optimizer, warmup_epochs, epochs if epochs is not None else 100) # when training for fixed time lr schedule takes 100 steps
@@ -235,13 +238,9 @@ def train_mamba(priordataloader_class,
                     with autocast(enabled=scaler is not None):
                         # If style is set to None, it should not be transferred to device
                         output = mamba_model(
-                            #tuple(
-                            #    e.to(device) if torch.is_tensor(e) else e 
-                            #    for e in data
-                            #    ) 
-                            #    if isinstance(data, tuple)
                             tuple(
-                                e for e in data
+                                e.to(device) if torch.is_tensor(e) else e 
+                                for e in data
                                 ) 
                                 if isinstance(data, tuple)
 
@@ -249,9 +248,6 @@ def train_mamba(priordataloader_class,
                             single_eval_pos=single_eval_pos)
 
                         forward_time = time.time() - before_forward
-
-                        #print(f"Out shape: {output.size()}")
-                        #print(f"Targets shape: {targets.size()}")
 
                         if single_eval_pos is not None:
                             targets = targets[single_eval_pos:]
