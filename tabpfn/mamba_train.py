@@ -67,6 +67,8 @@ def permute_data(data, targets, device="cuda:1"):
 
     data_return[1].to(device)
     data_return[2].to(device)
+    data[1].to(device)
+    data[2].to(device)
     targets_return.to(device)
 
     return data_return, targets_return
