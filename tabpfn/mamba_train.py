@@ -206,10 +206,12 @@ def train_mamba(priordataloader_class,
         
         for batch, (data, targets, single_eval_pos) in enumerate(dl):
 
+            targets_original = targets
+
             for repeat in range(permutation_repeat + 1):
 
                 if repeat > 0:   # Then shuffle
-                    data, targets = permute_data(data, targets)
+                    data, targets = permute_data(data, targets_original)
 
                 if using_dist and not (batch % aggregate_k_gradients == aggregate_k_gradients - 1):
                     cm = mamba_model.no_sync()
