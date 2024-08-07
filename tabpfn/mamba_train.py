@@ -382,7 +382,7 @@ def train_mamba(priordataloader_class,
                                                              bptt=bptt,
                                                              eval_positions=eval_positions,
                                                              metric=metric_used, 
-                                                             device="cuda", 
+                                                             device=device, 
                                                              method_name="mamba")
                 
                 wandb_dict["test/mamba_mean_acc"] = eval_result
