@@ -221,8 +221,6 @@ def train_mamba(priordataloader_class,
         
         for batch, (data, targets, single_eval_pos) in enumerate(dl):
 
-            print(f"In Batch: {batch}")
-
             targets_original = targets
 
             for repeat in range(permutation_repeat + 1):
@@ -316,7 +314,7 @@ def train_mamba(priordataloader_class,
                 before_get_batch = time.time()
             
             
-        return total_loss / steps_per_epoch, \
+        return total_loss / (steps_per_epoch * (permutation_repeat + 1)), \
                 (total_positional_losses / total_positional_losses_recorded).tolist(), \
                 time_to_get_batch, \
                 forward_time, \
