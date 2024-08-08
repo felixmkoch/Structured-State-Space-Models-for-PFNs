@@ -283,7 +283,7 @@ def init_dist(device):
 
         return True, rank, f'cuda:{rank}'
     else:
-        #print('Not using distributed')
+        print('Not using distributed')
         # will not change any of the behavior of print, but allows putting the force=True in the print calls
         print_on_master_only(True)
         return False, 0, device

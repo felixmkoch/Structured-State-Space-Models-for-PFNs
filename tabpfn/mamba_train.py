@@ -118,6 +118,7 @@ def train_mamba(priordataloader_class,
           evaluation_class=None,
           permutation_repeat=0,     # For each data-target-pair, we repeat the training permutation_repeat times with different data positions.
           enable_data_parallel=False,
+          config={},
           **model_extra_args
           ):
     
@@ -312,8 +313,7 @@ def train_mamba(priordataloader_class,
                     #ignore_steps += (targets == -100).float().mean()
 
                 before_get_batch = time.time()
-            
-            
+
         return total_loss / (steps_per_epoch * (permutation_repeat + 1)), \
                 (total_positional_losses / total_positional_losses_recorded).tolist(), \
                 time_to_get_batch, \
@@ -388,8 +388,8 @@ def train_mamba(priordataloader_class,
             wandb.log(wandb_dict)
 
             # stepping with wallclock time based scheduler
-            #if epoch_callback is not None and rank == 0:
-            #    epoch_callback(model, epoch / epochs)
+            if epoch_callback is not None and rank == 0:
+                epoch_callback(mamba_model, epoch, config, "mamba")
             scheduler.step()
     except KeyboardInterrupt:
         pass

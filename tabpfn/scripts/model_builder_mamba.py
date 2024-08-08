@@ -363,6 +363,7 @@ def get_model_mamba(config,
                   , permutation_repeat=permutation_repeat
                   , enable_data_parallel=enable_data_parallel
                   , weight_decay=config.get('weight_decay', 0.0)
+                  , config=config
             )
 
     #------------------------------------------------------------------------------------------------
