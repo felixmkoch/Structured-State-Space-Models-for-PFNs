@@ -45,6 +45,8 @@ def create_block(
         ssm_layer = ssm_cfg.pop("layer", "Mamba1")
         if ssm_layer not in ["Mamba1", "Mamba2"]:
             raise ValueError(f"Invalid ssm_layer: {ssm_layer}, only support Mamba1 and Mamba2")
+        
+        print(f"creating mixer cls {ssm_layer}")
         mixer_cls = partial(
             Mamba2 if ssm_layer == "Mamba2" else Mamba,
             layer_idx=layer_idx,
@@ -168,7 +170,10 @@ class Mamba2Backbone(nn.Module):
 
         residual = None
 
-        for block in self.blocks: hidden_states, residual = block(hidden_states, residual, inference_params=inference_parameters)
+        for block in self.blocks: 
+            print(f"Size hidden states: {hidden_states.size()}")
+            print(f"size residual: {residual.size() if residual else -1}")
+            hidden_states, residual = block(hidden_states, residual, inference_params=inference_parameters)
 
         if not self.fused_add_norm:
             residual = (hidden_states + residual) if residual is not None else hidden_states

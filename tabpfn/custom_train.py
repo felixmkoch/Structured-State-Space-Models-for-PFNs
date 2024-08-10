@@ -1,7 +1,3 @@
-#------------------------------------------------------------------------------------------------
-#                                      IMPORTS
-#------------------------------------------------------------------------------------------------
-
 import os
 import itertools
 import argparse
@@ -9,7 +5,7 @@ import time
 import datetime
 import yaml
 from contextlib import nullcontext
-import wandb
+from evaluation_helper import EvalHelper
 
 
 import torch
@@ -17,7 +13,6 @@ from torch import nn
 
 import tabpfn.utils as utils
 from tabpfn.transformer import TransformerModel
-from mamba import MambaModel
 from tabpfn.utils import get_cosine_schedule_with_warmup, get_openai_lr, StoreDictKeyPair, get_weighted_single_eval_pos_sampler, get_uniform_single_eval_pos_sampler
 import tabpfn.priors as priors
 import tabpfn.encoders as encoders
@@ -25,17 +20,9 @@ import tabpfn.positional_encodings as positional_encodings
 from tabpfn.utils import init_dist
 from torch.cuda.amp import autocast, GradScaler
 from torch import nn
-
+import wandb
+from tabpfn.mamba import MambaModel
 from tabpfn.scripts import tabular_metrics
-
-#------------------------------------------------------------------------------------------------
-#                                    END IMPORTS
-#------------------------------------------------------------------------------------------------
-
-#------------------------------------------------------------------------------------------------
-#                                    CLASS LOSSES
-#------------------------------------------------------------------------------------------------
-
 
 class Losses():
     gaussian = nn.GaussianNLLLoss(full=True, reduction='none')
@@ -44,14 +31,7 @@ class Losses():
         num_classes = num_classes.shape[0] if torch.is_tensor(num_classes) else num_classes
         return nn.CrossEntropyLoss(reduction='none', weight=torch.ones(num_classes))
     bce = nn.BCEWithLogitsLoss(reduction='none')
-    
-#------------------------------------------------------------------------------------------------
-#                                  END CLASS LOSSES
-#------------------------------------------------------------------------------------------------
 
-#------------------------------------------------------------------------------------------------
-#                                  HELPER FUNCTIONS
-#------------------------------------------------------------------------------------------------
 
 def permute_data(data, targets, device="cuda:1"):
 
@@ -73,20 +53,12 @@ def permute_data(data, targets, device="cuda:1"):
 
     return data_return, targets_return
 
-#------------------------------------------------------------------------------------------------
-#                                 END HELPER FUNCTIONS
-#------------------------------------------------------------------------------------------------
-
-#------------------------------------------------------------------------------------------------
-#                                MAMBA TRAIN FUNCTION
-#------------------------------------------------------------------------------------------------
-
-def train_mamba(priordataloader_class, 
+def train(priordataloader_class, 
           criterion, 
           encoder_generator, 
           emsize=200, 
           nhid=200, 
-          nlayers=6, 
+          nlayers=6,
           nhead=2, 
           dropout=0.0,
           epochs=10, 
@@ -98,6 +70,7 @@ def train_mamba(priordataloader_class,
           warmup_epochs=10, 
           input_normalization=False,
           y_encoder_generator=None, 
+          pos_encoder_generator=None, 
           decoder=None, 
           extra_prior_kwargs_dict={}, 
           scheduler=get_cosine_schedule_with_warmup,
@@ -107,21 +80,21 @@ def train_mamba(priordataloader_class,
           bptt_extra_samples=None, 
           gpu_device='cuda:0',
           aggregate_k_gradients=1, 
-          verbose=True,
+          verbose=True, 
           style_encoder_generator=None, 
           epoch_callback=None,
           initializer=None, 
           initialize_with_model=None, 
-          train_mixed_precision=False,
+          train_mixed_precision=False, 
+          efficient_eval_masking=True,
+          evaluation_class: EvalHelper=None, 
           enable_autocast=True,
-          num_mamba_layers=2,
-          evaluation_class=None,
-          permutation_repeat=0,     # For each data-target-pair, we repeat the training permutation_repeat times with different data positions.
+          permutation_repeat=0,
           enable_data_parallel=False,
           config={},
+          model_type="",    # mamba/transformer
           **model_extra_args
           ):
-    
     device = gpu_device if torch.cuda.is_available() else 'cpu:0'
     print(f'Using {device} device')
     using_dist, rank, device = init_dist(device)
@@ -133,79 +106,80 @@ def train_mamba(priordataloader_class,
             return single_eval_pos, single_eval_pos + bptt_extra_samples
         else:
             return single_eval_pos, bptt
-    
-    #
-    # DataLoader Initialization
-    #
-    dl = priordataloader_class(
-        num_steps=steps_per_epoch, 
-        batch_size=batch_size, 
-        eval_pos_seq_len_sampler=eval_pos_seq_len_sampler, 
-        seq_len_maximum=bptt+(bptt_extra_samples if bptt_extra_samples else 0), 
-        device=device, 
-        **extra_prior_kwargs_dict
-    )
+    dl = priordataloader_class(num_steps=steps_per_epoch, batch_size=batch_size, eval_pos_seq_len_sampler=eval_pos_seq_len_sampler, seq_len_maximum=bptt+(bptt_extra_samples if bptt_extra_samples else 0), device=device, **extra_prior_kwargs_dict)
 
-    # Encoder
-    #print(f"Number of Dataloader Features: {dl.num_features}")
     encoder = encoder_generator(dl.num_features, emsize)
-    if isinstance(criterion, nn.GaussianNLLLoss): n_out = 2
-    elif isinstance(criterion, nn.CrossEntropyLoss): n_out = criterion.weight.shape[0]
-    else: n_out = 1
+    #style_def = dl.get_test_batch()[0][0] # the style in batch of the form ((style, x, y), target, single_eval_pos)
+    style_def = None
+    #print(f'Style definition of first 3 examples: {style_def[:3] if style_def is not None else None}')
+    style_encoder = style_encoder_generator(style_def.shape[1], emsize) if (style_def is not None) else None
+    if isinstance(criterion, nn.GaussianNLLLoss):
+        n_out = 2
+    elif isinstance(criterion, nn.CrossEntropyLoss):
+        n_out = criterion.weight.shape[0]
+    else:
+        n_out = 1
 
-    #
-    # MAMBA Model
-    #
+    if model_type == "transformer":
+        model = TransformerModel(encoder, 
+                                n_out, 
+                                emsize, 
+                                nhead, 
+                                nhid, 
+                                nlayers, 
+                                dropout, 
+                                style_encoder=style_encoder,
+                                y_encoder=y_encoder_generator(1, emsize), 
+                                input_normalization=input_normalization,
+                                pos_encoder=(pos_encoder_generator or positional_encodings.NoPositionalEncoding)(emsize, bptt*2),
+                                decoder=decoder, 
+                                init_method=initializer, 
+                                efficient_eval_masking=efficient_eval_masking, 
+                                **model_extra_args
+                                )
+    elif model_type == "mamba":
+        model = MambaModel(
+            encoder=encoder,
+            n_out=n_out,
+            ninp=emsize,
+            nhid=nhid,
+            y_encoder=y_encoder_generator(1, emsize),
+            num_layers=nlayers,
+            device=device,
+        )
+        
 
-    #print(f"Emsize: {emsize}")
 
-    mamba_model = MambaModel(
-        encoder=encoder,
-        n_out=n_out,
-        ninp=emsize,
-        nhid=nhid,
-        y_encoder=y_encoder_generator(1, emsize),
-        num_layers=num_mamba_layers,
-        device=device,
-    )
-    
-    #
-    # END MAMBA Model
-    #
-    
-    # Check if model should be loaded from state dict
-    mamba_model.criterion = criterion
+    model.criterion = criterion
+    if load_weights_from_this_state_dict is not None:
+        model.load_state_dict(load_weights_from_this_state_dict)
+    if initialize_with_model is not None:
+        model.init_from_small_model(initialize_with_model)
 
-    print(f"Using Mamba with {sum(p.numel() for p in mamba_model.parameters())/1000/1000:.{2}f} M parameters")
+    print(f"Using a {model_type} model with {sum(p.numel() for p in model.parameters())/1000/1000:.{2}f} M parameters")
 
-    #try:
-    #    for (k, v), (k2, v2) in zip(model.state_dict().items(), initialize_with_model.state_dict().items()):
-    #        print(k, ((v - v2) / v).abs().mean(), v.shape)
-    #except Exception:
-    #    pass
+    try:
+        for (k, v), (k2, v2) in zip(model.state_dict().items(), initialize_with_model.state_dict().items()):
+            print(k, ((v - v2) / v).abs().mean(), v.shape)
+    except Exception:
+        pass
 
-    # Specify whether model should be trained on CPU or GPU
-    mamba_model.to(device)
-    
-    # Init Data Loader and Optimizer
-    dl.model = mamba_model
-    if enable_data_parallel and using_dist:
-        print("Distributed Training")
-        mamba_model = torch.nn.parallel.DistributedDataParallel(mamba_model, device_ids=[rank], output_device=rank, broadcast_buffers=False)
+    model.to(device)
+    if using_dist:
+        print("Distributed training")
+        model = torch.nn.parallel.DistributedDataParallel(model, device_ids=[rank], output_device=rank, broadcast_buffers=False)
+    dl.model = model
 
-    optimizer = torch.optim.AdamW(mamba_model.parameters(), lr=lr, weight_decay=weight_decay)
+    optimizer = torch.optim.AdamW(model.parameters(), lr=lr, weight_decay=weight_decay)
     scheduler = scheduler(optimizer, warmup_epochs, epochs if epochs is not None else 100) # when training for fixed time lr schedule takes 100 steps
-    scaler = GradScaler() if enable_autocast else None
+
+    scaler = GradScaler() if train_mixed_precision else None
 
     # check that everything uses up-to-date APIs
     utils.check_compatibility(dl)
 
-    #
-    # Train Function
-    #
-    
     def train_epoch():
-        mamba_model.train()  # Turn on the train mode
+        model.train()  # Turn on the train mode
         total_loss = 0.
         total_positional_losses = 0.
         total_positional_losses_recorded = 0
@@ -230,7 +204,7 @@ def train_mamba(priordataloader_class,
                     data, targets = permute_data(data, targets_original)
 
                 if using_dist and not (batch % aggregate_k_gradients == aggregate_k_gradients - 1):
-                    cm = mamba_model.no_sync()
+                    cm = model.no_sync()
                 else:
                     cm = nullcontext()
                 with cm:
@@ -243,7 +217,7 @@ def train_mamba(priordataloader_class,
 
                     with autocast(enabled=scaler is not None):
                         # If style is set to None, it should not be transferred to device
-                        output = mamba_model(
+                        output = model(
                             tuple(
                                 e.to(device) if torch.is_tensor(e) else e 
                                 for e in data
@@ -285,7 +259,7 @@ def train_mamba(priordataloader_class,
 
                     if batch % aggregate_k_gradients == aggregate_k_gradients - 1:
                         if scaler: scaler.unscale_(optimizer)
-                        torch.nn.utils.clip_grad_norm_(mamba_model.parameters(), 1.)
+                        torch.nn.utils.clip_grad_norm_(model.parameters(), 1.)
                         try:
                             if scaler:
                                 scaler.step(optimizer)
@@ -321,16 +295,12 @@ def train_mamba(priordataloader_class,
                 step_time, \
                 nan_steps.cpu().item()/(batch+1),\
                 0
-                #ignore_steps.cpu().item()/(batch+1)
-               
-    #
-    # END Train Function
-    #
-    
-    #
-    # Training Process
-    #
-    
+
+    total_loss = float('inf')
+    total_positional_losses = float('inf')
+
+
+
     print("Beginning the Training process")
     print(f"Total number of epochs: {epochs}")
 
@@ -346,7 +316,7 @@ def train_mamba(priordataloader_class,
                 train_epoch()
             if hasattr(dl, 'validate') and epoch % validation_period == 0:
                 with torch.no_grad():
-                    val_score = dl.validate(mamba_model)
+                    val_score = dl.validate(model)
             else:
                 val_score = None
 
@@ -368,7 +338,7 @@ def train_mamba(priordataloader_class,
             # Wandb Logging
             #
             wandb_dict = {}
-            wandb_dict["train/mamba_loss"] = total_loss
+            wandb_dict[f"train/{model_type}_loss"] = total_loss
             wandb_dict["extras/nan_share"] = nan_share
             
 
@@ -376,20 +346,20 @@ def train_mamba(priordataloader_class,
             if evaluation_class:
                 metric_used = tabular_metrics.auc_metric
                 eval_positions = [1000]
-                eval_result = evaluation_class.do_evaluation(model=mamba_model, 
+                eval_result = evaluation_class.do_evaluation(model=model, 
                                                              bptt=bptt,
                                                              eval_positions=eval_positions,
                                                              metric=metric_used, 
                                                              device=device, 
                                                              method_name="mamba")
                 
-                wandb_dict["test/mamba_mean_acc"] = eval_result
+                wandb_dict[f"test/{model_type}_mean_acc"] = eval_result
 
             wandb.log(wandb_dict)
 
             # stepping with wallclock time based scheduler
             if epoch_callback is not None and rank == 0:
-                epoch_callback(mamba_model, epoch, config, "mamba")
+                epoch_callback(model, epoch, config, model_type)
             scheduler.step()
     except KeyboardInterrupt:
         pass
@@ -398,9 +368,4 @@ def train_mamba(priordataloader_class,
     # END Training Process
     #
     
-    return total_loss, total_positional_losses, mamba_model.to('cpu'), dl
-    
-    
-#------------------------------------------------------------------------------------------------
-#                              END MAMBA TRAIN FUNCTION
-#------------------------------------------------------------------------------------------------
+    return total_loss, total_positional_losses, model.to('cpu'), dl

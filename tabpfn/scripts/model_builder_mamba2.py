@@ -1,7 +1,7 @@
 from functools import partial
 import tabpfn.encoders as encoders
 
-from mamba2 import Mamba2Model
+from tabpfn.mamba2 import Mamba2Model
 from tabpfn.utils import get_uniform_single_eval_pos_sampler
 import torch
 import math

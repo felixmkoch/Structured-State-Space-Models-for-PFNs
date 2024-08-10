@@ -17,7 +17,7 @@ from sklearn.utils.multiclass import check_classification_targets
 from sklearn.utils import column_or_1d
 from sklearn.preprocessing import LabelEncoder
 from pathlib import Path
-from tabpfn.scripts.model_builder_mamba import load_model, load_model_only_inference
+from tabpfn.scripts.model_builder_custom import load_model, load_model_only_inference
 import os
 import pickle
 import io
@@ -104,7 +104,7 @@ def load_model_workflow(i, e, add_name, base_path, device='cpu', eval_addition='
     print(f'Loading {model_file}')
     if only_inference:
         # print('Loading model that can be used for inference only')
-        model, c = load_model_only_inference(base_path, model_file, device)
+        model, c = load_model_only_inference(base_path, model_file, device, model_name="mamba")
     else:
         #until now also only capable of inference
         model, c = load_model(base_path, model_file, device, eval_positions=[], verbose=False)

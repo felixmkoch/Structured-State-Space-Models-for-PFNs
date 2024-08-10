@@ -2,41 +2,22 @@ from functools import partial
 import tabpfn.encoders as encoders
 
 from tabpfn.transformer import TransformerModel
-from mamba import MambaModel
+from tabpfn.mamba import MambaModel
 from tabpfn.utils import get_uniform_single_eval_pos_sampler
 import torch
 import math
-
-def save_model(model, path, filename, config_sample):
-    config_sample = {**config_sample}
-
-    def make_serializable(config_sample):
-        if isinstance(config_sample, dict):
-            config_sample = {k: make_serializable(config_sample[k]) for k in config_sample}
-        if isinstance(config_sample, list):
-            config_sample = [make_serializable(v) for v in config_sample]
-        if callable(config_sample):
-            config_sample = str(config_sample)
-        return config_sample
-
-    config_sample = make_serializable(config_sample)
-
-    torch.save((model.state_dict(), None, config_sample), os.path.join(path, filename))
-
-
 import subprocess as sp
 import os
 
-def get_gpu_memory():
-    command = "nvidia-smi"
-    memory_free_info = sp.check_output(command.split()).decode('ascii')
-    return memory_free_info
-
-def load_model_only_inference(path, filename, device):
+def load_model_only_inference(path, filename, device, model_name=""):
     """
     Loads a saved model from the specified position. This function only restores inference capabilities and
     cannot be used for further training.
     """
+
+    models_known = ["mamba", "transformer"]
+
+    if not model_name in models_known: raise ValueError(f"Model named {model_name} cannot be loaded as it is not known yet.")
 
     model_state, optimizer_state, config_sample = torch.load(os.path.join(path, filename), map_location='cpu')
 
@@ -49,7 +30,7 @@ def load_model_only_inference(path, filename, device):
 
     n_out = config_sample['max_num_classes']
     emsize = config_sample["emsize"]
-    mamba_num_layers = config_sample["mamba_num_layers"]
+    mamba_num_layers = config_sample["num_layers"]
 
     device = device if torch.cuda.is_available() else 'cpu:0'
     encoder = encoder(config_sample['num_features'], emsize)
@@ -61,31 +42,43 @@ def load_model_only_inference(path, filename, device):
     assert config_sample['max_num_classes'] > 2
     loss = torch.nn.CrossEntropyLoss(reduction='none', weight=torch.ones(int(config_sample['max_num_classes'])))
 
-    #model = TransformerModel(encoder, n_out, config_sample['emsize'], config_sample['nhead'], nhid,
-    #                         config_sample['nlayers'], y_encoder=y_encoder_generator(1, config_sample['emsize']),
-    #                         dropout=config_sample['dropout'],
-    #                         efficient_eval_masking=config_sample['efficient_eval_masking'])
-    
-    mamba_model = MambaModel(
-        encoder=encoder,
-        n_out=n_out,
-        ninp=emsize,
-        nhid=nhid,
-        y_encoder=y_encoder_generator(1, emsize),
-        num_layers=mamba_num_layers,
-        device=device,
-    )
+    #----------------------------------------------
+    #               MODEL LOAD
+    #----------------------------------------------
+
+    if model_name == "transformer":
+        model = TransformerModel(
+            encoder, 
+            n_out, 
+            config_sample['emsize'], 
+            config_sample['nhead'], 
+            nhid,
+            config_sample['nlayers'], 
+            y_encoder=y_encoder_generator(1, config_sample['emsize']),
+            dropout=config_sample['dropout'],
+            efficient_eval_masking=config_sample['efficient_eval_masking']
+            )
+    elif model_name == "mamba":
+        model = MambaModel(
+            encoder=encoder,
+            n_out=n_out,
+            ninp=emsize,
+            nhid=nhid,
+            y_encoder=y_encoder_generator(1, emsize),
+            num_layers=mamba_num_layers,
+            device=device,
+        )
 
     # print(f"Using a Transformer with {sum(p.numel() for p in model.parameters()) / 1000 / 1000:.{2}f} M parameters")
 
-    mamba_model.criterion = loss
+    model.criterion = loss
     module_prefix = 'module.'
     model_state = {k.replace(module_prefix, ''): v for k, v in model_state.items()}
-    mamba_model.load_state_dict(model_state)
-    mamba_model.to(device)
-    mamba_model.eval()
+    model.load_state_dict(model_state)
+    model.to(device)
+    model.eval()
 
-    return (float('inf'), float('inf'), mamba_model), config_sample # no loss measured
+    return (float('inf'), float('inf'), model), config_sample # no loss measured
 
 def load_model(path, filename, device, eval_positions, verbose):
     # TODO: This function only restores evaluation functionality but training canät be continued. It is also not flexible.
@@ -198,16 +191,18 @@ def get_meta_gp_prior_hyperparameters(config):
 #                                    MAMBA MODEL GETTER
 #------------------------------------------------------------------------------------------------
 
-def get_model_mamba(config, 
-                    device, 
-                    should_train=True, 
-                    verbose=False, 
-                    state_dict=None, 
-                    epoch_callback=None, 
-                    mamba_autocast=True, 
-                    evaluation_class=None, 
-                    permutation_repeat=0,
-                    enable_data_parallel=False):
+def get_model(config,
+              device,
+              should_train=True, 
+              verbose=False,
+              state_dict=None, 
+              epoch_callback=None, 
+              use_autocast=True, 
+              evaluation_class=None, 
+              permutation_repeat=0,
+              enable_data_parallel=False,
+              model_type=""
+              ):
 
     #------------------------------------------------------------------------------------------------
     #                                    CONFIG STUFF
@@ -215,7 +210,7 @@ def get_model_mamba(config,
 
     import tabpfn.priors as priors
     from tabpfn.train import train, Losses
-    from tabpfn.mamba_train import train_mamba
+    from tabpfn.custom_train import train
     extra_kwargs = {}
     verbose_train, verbose_prior = verbose >= 1, verbose >= 2
     config['verbose'] = verbose_prior
@@ -324,7 +319,7 @@ def get_model_mamba(config,
     #                                      MAMBA TRAIN
     #------------------------------------------------------------------------------------------------
     
-    model_mamba = train_mamba(model_proto.DataLoader
+    model = train(model_proto.DataLoader
                   , loss
                   , encoder
                   , style_encoder_generator = encoders.StyleEncoder if use_style else None
@@ -356,18 +351,18 @@ def get_model_mamba(config,
                         , **extra_kwargs
                     }
                   , lr=config['lr']
-                  , enable_autocast=mamba_autocast
-                  , num_mamba_layers=config['mamba_num_layers']
+                  , enable_autocast=use_autocast
                   , verbose=verbose_train
                   , evaluation_class=evaluation_class
                   , permutation_repeat=permutation_repeat
                   , enable_data_parallel=enable_data_parallel
                   , weight_decay=config.get('weight_decay', 0.0)
                   , config=config
+                  , model_type=model_type
             )
 
     #------------------------------------------------------------------------------------------------
     #                                    END MAMBA TRAIN
     #------------------------------------------------------------------------------------------------
 
-    return model_mamba
+    return model

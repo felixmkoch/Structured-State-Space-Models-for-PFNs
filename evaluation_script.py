@@ -19,8 +19,7 @@ METRIC_USED = tabular_metrics.auc_metric
 
 RESULT_CSV_SAVE_DIR = os.path.join("result_csvs", "test.csv")
 
-#MAMBA_MODEL_NAME = "tabpfn/models_diff/mamba_test_model.cpkt"
-MAMBA_MODEL_NAME = "tabpfn/models_diff/mamba_150e.cpkt"
+MAMBA_MODEL_NAME = "tabpfn/models_diff/mamba_small.cpkt"
 TRANSFORMER_MODEL_NAME = "tabpfn/models_diff/tabpfn_transformer_model.cpkt"
 
 SPLIT_NUMBERS = [1]
@@ -29,7 +28,7 @@ bptt_here = 1000
 max_time = 3600
 CONFIDENCE_LEVEL = 0.95
 
-JRT_PROMPT = False
+JRT_PROMPT = True
 
 device = "cuda:0"
 
