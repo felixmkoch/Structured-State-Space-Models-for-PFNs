@@ -3,6 +3,7 @@ import tabpfn.encoders as encoders
 
 from tabpfn.transformer import TransformerModel
 from tabpfn.mamba import MambaModel
+from tabpfn.hydra import HydraModel
 from tabpfn.utils import get_uniform_single_eval_pos_sampler
 import torch
 import math
@@ -15,7 +16,7 @@ def load_model_only_inference(path, filename, device, model_name=""):
     cannot be used for further training.
     """
 
-    models_known = ["mamba", "transformer"]
+    models_known = ["mamba", "transformer", "hydra"]
 
     if not model_name in models_known: raise ValueError(f"Model named {model_name} cannot be loaded as it is not known yet.")
 
@@ -60,6 +61,17 @@ def load_model_only_inference(path, filename, device, model_name=""):
             )
     elif model_name == "mamba":
         model = MambaModel(
+            encoder=encoder,
+            n_out=n_out,
+            ninp=emsize,
+            nhid=nhid,
+            y_encoder=y_encoder_generator(1, emsize),
+            num_layers=mamba_num_layers,
+            device=device,
+        )
+
+    elif model_name == "hydra":
+        model = HydraModel(
             encoder=encoder,
             n_out=n_out,
             ninp=emsize,

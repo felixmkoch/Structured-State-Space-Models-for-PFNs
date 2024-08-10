@@ -22,6 +22,7 @@ from torch.cuda.amp import autocast, GradScaler
 from torch import nn
 import wandb
 from tabpfn.mamba import MambaModel
+from tabpfn.hydra import HydraModel
 from tabpfn.scripts import tabular_metrics
 
 class Losses():
@@ -146,6 +147,17 @@ def train(priordataloader_class,
             y_encoder=y_encoder_generator(1, emsize),
             num_layers=nlayers,
             device=device,
+        )
+
+    elif model_type == "hydra":
+        model = HydraModel(
+            encoder=encoder,
+            n_out=n_out,
+            ninp=emsize,
+            nhid=nhid,
+            y_encoder=y_encoder_generator(1, emsize),
+            num_layers=nlayers,
+            device=device
         )
         
 
