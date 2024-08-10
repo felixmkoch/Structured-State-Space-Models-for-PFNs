@@ -7,4 +7,5 @@ Sources:
 - mamba_ssm: https://github.com/state-spaces/mamba
 - tabpfn: https://github.com/automl/TabPFN
 - s4 model: https://github.com/state-spaces/s4
+- hydra: https://github.com/goombalab/hydra
 
