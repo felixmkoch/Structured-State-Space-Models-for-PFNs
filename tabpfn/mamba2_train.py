@@ -13,7 +13,7 @@ import torch
 from torch import nn
 
 import tabpfn.utils as utils
-from mamba2 import Mamba2Model
+from tabpfn.mamba2 import Mamba2Model
 from tabpfn.utils import get_cosine_schedule_with_warmup, get_openai_lr, StoreDictKeyPair, get_weighted_single_eval_pos_sampler, get_uniform_single_eval_pos_sampler
 import tabpfn.priors as priors
 import tabpfn.encoders as encoders
