@@ -34,11 +34,11 @@ class Losses():
     bce = nn.BCEWithLogitsLoss(reduction='none')
 
 
-def permute_data(data, targets, device="cuda:1"):
+def permute_data(data, targets, device="cuda:0"):
 
     # NOTE: This is a quick fix until multi-GPU support is there.
 
-    to_device_tmp = "cuda:0"
+    to_device_tmp = "cuda:1"
 
     # Get the permutation of indices
     permutation = torch.randperm(data[1].size(0))
