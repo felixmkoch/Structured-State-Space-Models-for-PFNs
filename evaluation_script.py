@@ -5,6 +5,7 @@ from tabpfn.datasets import load_openml_list
 from evaluation_helper import EvalHelper
 from tabpfn.scripts.mamba_prediction_interface import load_model_workflow as mamba_load_model_workflow
 from tabpfn.scripts.transformer_prediction_interface import load_model_workflow as transformer_load_model_workflow
+from tabpfn.scripts.hydra_prediction_interface import load_model_workflow as hydra_load_model_workflow
 from tabpfn.scripts.tabular_baselines import *
 from scipy import stats
 
@@ -21,6 +22,7 @@ RESULT_CSV_SAVE_DIR = os.path.join("result_csvs", "test.csv")
 
 MAMBA_MODEL_NAME = "tabpfn/models_diff/mamba_small.cpkt"
 TRANSFORMER_MODEL_NAME = "tabpfn/models_diff/tabpfn_transformer_model.cpkt"
+HYDRA_MODEL_NAME = "tabpfn/models_diff/hydra_model.cpkt"
 
 SPLIT_NUMBERS = [1]
 
@@ -79,6 +81,22 @@ def do_evaluation(eval_list):
 
         # Key is the dataset id (did) and value the mean error on it.
         result_dict["transformer"] = eval_helper.do_evaluation_custom(transformer_model, bptt=bptt_here, eval_positions=transformer_config["eval_positions"], metric=METRIC_USED, device=device, method_name="transformer",
+                                        evaluation_type=EVALUATION_TYPE, split_numbers=SPLIT_NUMBERS, jrt_prompt=JRT_PROMPT)
+
+
+    #
+    # HYDRA EVALUATION
+    #
+    if "hydra" in eval_list:
+        # Load Transformer Model (Yes this is a bit scuffed).
+        h_model, hydra_config, results_file = hydra_load_model_workflow(2, -1, add_name="", base_path="", device=device,eval_addition='', 
+                                                    only_inference=True, model_path_custom=HYDRA_MODEL_NAME)
+
+        # That's the real transformer model here.
+        hydra_model = h_model[2]
+
+        # Key is the dataset id (did) and value the mean error on it.
+        result_dict["hydra"] = eval_helper.do_evaluation_custom(hydra_model, bptt=bptt_here, eval_positions=hydra_config["eval_positions"], metric=METRIC_USED, device=device, method_name="hydra",
                                         evaluation_type=EVALUATION_TYPE, split_numbers=SPLIT_NUMBERS, jrt_prompt=JRT_PROMPT)
 
 
