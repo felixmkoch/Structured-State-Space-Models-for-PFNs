@@ -16,6 +16,7 @@ from tabpfn.scripts.tabular_baselines import get_scoring_string
 from tabpfn.scripts import tabular_metrics
 from tabpfn.scripts.transformer_prediction_interface import *
 from tabpfn.scripts.mamba_prediction_interface import *
+from tabpfn.scripts.hydra_prediction_interface import hydra_predict
 from tabpfn.scripts.baseline_prediction_interface import *
 """
 ===============================
@@ -332,6 +333,15 @@ def evaluate_position(X,
                                                             , device=device
                                                             , extend_features=True
                                                             , **kwargs), None
+            
+        if method_name == "hydra":
+            outputs, best_configs = hydra_predict(model, eval_xs, eval_ys, eval_position, metric_used=metric_used
+                                                            , categorical_feats=categorical_feats
+                                                            , inference_mode=True
+                                                            , device=device
+                                                            , extend_features=True
+                                                            , **kwargs), None    
+    
     else:
 
         print(f"Baseline Predict method {metric_used} with {max_time} maximum time.")
