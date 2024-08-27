@@ -68,16 +68,16 @@ config["num_features_used"] = uniform_int_sampler_f(1, max_features)
 #                                          CUSTOM
 #------------------------------------------------------------------------------------------------
 
-model_type = "mamba"
+model_type = "hydra"
 
 config['batch_size'] = 64 
-config['emsize'] = 64 
-config["epochs"] = 35
-config["bptt"] = 40
+config['emsize'] = 128 
+config["epochs"] = 2
+config["bptt"] = 25
 
-config["num_steps"] = 4
+config["num_steps"] = 2
 
-config["nlayers"] = 8
+config["nlayers"] = 16
 config["enable_autocast"] = True
 config["permutation_repeat"] = 0
 

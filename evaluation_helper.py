@@ -122,27 +122,30 @@ class EvalHelper:
                              max_features=100, 
                              max_time=300, 
                              split_numbers=[1],
-                             jrt_prompt=False):
+                             jrt_prompt=False,
+                             permutation_random=False,
+                             return_whole_output=False):
 
         '''
         Evaluation on customly settable datasets.
         '''
 
+        predefined_eval_types = ["openmlcc18", "openmlcc18_large", "test"]
+
         # Standard case: Normal eval dataset
-        if evaluation_type not in ["openmlcc18", "openmlcc18_large", "test"]: return None
+        if evaluation_type not in predefined_eval_types: print("Using single DID in Evaluation")
 
         # The dataset to iterate over
         ds = None
-        if evaluation_type == "openmlcc18": 
-            ds = self.openml_cc18_dids_small
-            self.check_datasets_data(self.openml_cc18_dids_small)
+        if evaluation_type == "openmlcc18": ds = self.openml_cc18_dids_small
 
-        if evaluation_type == "openmlcc18_large": 
-            ds = self.openml_cc18_dids_large
-            self.check_datasets_data(self.openml_cc18_dids_large)
-        if evaluation_type == "test": 
-            ds = self.test_dids_classification
-            self.check_datasets_data(self.test_dids_classification)
+        if evaluation_type == "openmlcc18_large": ds = self.openml_cc18_dids_large
+
+        if evaluation_type == "test": ds = self.test_dids_classification
+
+        if evaluation_type not in predefined_eval_types: ds = [evaluation_type]
+            
+        self.check_datasets_data(ds)
 
         self.make_limit_datasets(max_classes, max_features, ds)
 
@@ -153,9 +156,14 @@ class EvalHelper:
         for did in ds:
             result[did] = []
             for split_number in split_numbers:
-                result[did].append(evaluate(self.limit_dict[did], bptt, eval_positions, metric, model, device, method_name=method_name, max_time=max_time, split_number=split_number, jrt_prompt=jrt_prompt)["mean_metric"].item())
+                if return_whole_output:
+                    result[did].append(evaluate(self.limit_dict[did], bptt, eval_positions, metric, model, device, method_name=method_name, max_time=max_time, split_number=split_number, jrt_prompt=jrt_prompt, random_premutation=permutation_random))
+                else:
+                    result[did].append(evaluate(self.limit_dict[did], bptt, eval_positions, metric, model, device, method_name=method_name, max_time=max_time, split_number=split_number, jrt_prompt=jrt_prompt, random_premutation=permutation_random)["mean_metric"].item())
                 
         return result
+    
+
 
     ''' Need to fix this later
     def do_naive_evaluation(self):

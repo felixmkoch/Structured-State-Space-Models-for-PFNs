@@ -34,17 +34,38 @@ class Losses():
     bce = nn.BCEWithLogitsLoss(reduction='none')
 
 
-def permute_data(data, targets, device="cuda:0"):
+def permute_data(data, targets, eval_position, device="cuda:0"):
+
+    import numpy as np
+
+    generator = torch.Generator()
+    rng = np.random.RandomState()
+    gen_seed = rng.randint(1e7)
+    generator.manual_seed(gen_seed)
 
     # NOTE: This is a quick fix until multi-GPU support is there.
-
     to_device_tmp = "cuda:1"
 
-    # Get the permutation of indices
-    permutation = torch.randperm(data[1].size(0))
+    # Onto the other device
+    data[1] = data[1].to(device)
+    data[2] = data[2].to(device)
+    targets = targets.to(device)
 
-    data_return = (None, data[1].to(to_device_tmp)[permutation], data[2].to(to_device_tmp)[permutation])
-    targets_return = targets.to(to_device_tmp)[permutation]
+    first_part_x1 = data[1][:eval_position]
+    first_part_x2 = data[2][:eval_position]
+    first_part_y = targets[:eval_position]
+
+    permutation = permutation = torch.randperm(eval_position, generator=generator)
+
+    x1_first_shuffled = first_part_x1[permutation]
+    x2_first_shuffled = first_part_x2[permutation]
+    y_first_shuffled = first_part_y[permutation]
+
+    x1_return = torch.cat((x1_first_shuffled, data[1][eval_position:]), dim=0)
+    x2_return = torch.cat((x2_first_shuffled, data[2][eval_position:]), dim=0)
+    targets_return = torch.cat((y_first_shuffled, targets[eval_position:]), dim=0)
+
+    data_return = (None, x1_return, x2_return)
 
     data_return[1].to(device)
     data_return[2].to(device)
@@ -213,7 +234,7 @@ def train(priordataloader_class,
             for repeat in range(permutation_repeat + 1):
 
                 if repeat > 0:   # Then shuffle
-                    data, targets = permute_data(data, targets_original)
+                    data, targets = permute_data(data, targets_original, eval_position=single_eval_pos)
 
                 if using_dist and not (batch % aggregate_k_gradients == aggregate_k_gradients - 1):
                     cm = model.no_sync()
@@ -259,14 +280,11 @@ def train(priordataloader_class,
                         else:
                             losses = criterion(output, targets)
                         losses = losses.view(*output.shape[0:2])
-                        #print(f"Loss is: {losses}")
                         #time.sleep(10)
                         loss, nan_share = utils.torch_nanmean(losses.mean(0), return_nanshare=True)
                         loss = loss / aggregate_k_gradients
-                        #print(f"Loss afterwards is: {loss}")
 
                     if scaler: loss = scaler.scale(loss)
-                    #print(f"Loss inverted is: {loss}")
                     loss.backward()
 
                     if batch % aggregate_k_gradients == aggregate_k_gradients - 1:
@@ -292,16 +310,23 @@ def train(priordataloader_class,
 
                         total_positional_losses_recorded += torch.ones(bptt) if single_eval_pos is None else \
                             nn.functional.one_hot(torch.tensor(single_eval_pos), bptt)
-                        
-                        #print(f"Total Positional Losses: {total_positional_losses}")
-                        #print(f"Total Positional Losses Recorded: {total_positional_losses_recorded}")
                     nan_steps += nan_share
                     #ignore_steps += (targets == -100).float().mean()
 
                 before_get_batch = time.time()
 
+        '''
         return total_loss / (steps_per_epoch * (permutation_repeat + 1)), \
                 (total_positional_losses / total_positional_losses_recorded).tolist(), \
+                time_to_get_batch, \
+                forward_time, \
+                step_time, \
+                nan_steps.cpu().item()/(batch+1),\
+                0
+        '''
+
+        return total_loss / (steps_per_epoch * (permutation_repeat + 1)), \
+                [], \
                 time_to_get_batch, \
                 forward_time, \
                 step_time, \
@@ -320,8 +345,6 @@ def train(priordataloader_class,
     total_positional_losses = float('inf')
     try:
         for epoch in (range(1, epochs + 1) if epochs is not None else itertools.count(1)):
-            
-            #print("----------------- EPOCH START ---------------------")
 
             epoch_start_time = time.time()
             total_loss, total_positional_losses, time_to_get_batch, forward_time, step_time, nan_share, ignore_share =\
@@ -343,8 +366,6 @@ def train(priordataloader_class,
                     f' nan share {nan_share:5.2f} ignore share (for classification tasks) {ignore_share:5.4f}'
                     + (f'val score {val_score}' if val_score is not None else ''))
                 print('-' * 89)
-                
-            #print("------------------ EPOCH END ----------------------")
 
             #
             # Wandb Logging

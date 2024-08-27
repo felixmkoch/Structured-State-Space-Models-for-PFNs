@@ -86,6 +86,7 @@ def evaluate(datasets, bptt, eval_positions, metric_used, model, device='cpu'
              , return_tensor=False
              , method_name=""
              , jrt_prompt=False
+             , random_premutation=False
              , **kwargs):
     """
     Evaluates a list of datasets for a model function.
@@ -136,6 +137,7 @@ def evaluate(datasets, bptt, eval_positions, metric_used, model, device='cpu'
                         , path_interfix=""
                         , method=""
                         , jrt_promt=jrt_prompt
+                        , random_permutation = random_premutation
                         ,**kwargs)
             
 
@@ -165,6 +167,8 @@ def evaluate(datasets, bptt, eval_positions, metric_used, model, device='cpu'
             ds_result[f'{ds_name}_outputs_at_{eval_position}'] = outputs
             ds_result[f'{ds_name}_ys_at_{eval_position}'] = ys
             ds_result[f'{ds_name}_time_at_{eval_position}'] = time_used
+
+            ds_result["last_outputs"] = outputs
 
             new_metric = torch_nanmean(torch.stack([metric_used(ys[i], outputs[i]) for i in range(ys.shape[0])]))
 
@@ -240,6 +244,27 @@ def generate_valid_split(X, y, bptt, eval_position, is_classification, split_num
     return eval_xs, eval_ys
 
 
+def permute_data(x, y, eval_position):
+
+    generator = torch.Generator()
+    rng = np.random.RandomState()
+    gen_seed = rng.randint(1e7)
+    generator.manual_seed(gen_seed)
+
+    first_part_x = x[:eval_position]
+    first_part_y = y[:eval_position]
+
+    permutation = permutation = torch.randperm(eval_position, generator=generator)
+
+    x_first_shuffled = first_part_x[permutation]
+    y_first_shuffled = first_part_y[permutation]
+
+    data_return = torch.cat((x_first_shuffled, x[eval_position:]), dim=0)
+    targets_return = torch.cat((y_first_shuffled, y[eval_position:]), dim=0)
+
+    return data_return, targets_return
+
+
 def evaluate_position(X, 
                       y, 
                       categorical_feats, 
@@ -257,7 +282,8 @@ def evaluate_position(X,
                       metric_used=None, 
                       device='cpu', 
                       method_name="",
-                      jrt_promt=False, 
+                      jrt_promt=False,
+                      random_permutation=False, 
                       per_step_normalization=False, 
                       **kwargs):
     """
@@ -281,30 +307,22 @@ def evaluate_position(X,
     :return:
     """
 
-    if save:
-        path = os.path.join(base_path, f'results/tabular/{path_interfix}/results_{method}_{ds_name}_{eval_position}_{bptt}_{split_number}.npy')
-        #log_path =
-
-    ## Load results if on disk
-    if not overwrite:
-        result = check_file_exists(path)
-        if result is not None:
-            if not fetch_only:
-                print(f'Loaded saved result for {path}')
-            return result
-        elif fetch_only:
-            #print(f'Could not load saved result for {path}')
-            return None
-
     ## Generate data splits
     eval_xs, eval_ys = generate_valid_split(X, y, bptt, eval_position
                                             , is_classification=tabular_metrics.is_classification(metric_used)
                                             , split_number=split_number)
     
-    if jrt_promt: 
-        eval_xs = eval_xs.repeat(2, 1, 1)
-        eval_ys = eval_ys.repeat(2, 1)
-    
+    if random_permutation:
+        eval_xs, eval_ys = permute_data(eval_xs, eval_ys, eval_position)
+
+    if jrt_promt:
+        repeated_part_x = eval_xs[:eval_position]
+        eval_xs = torch.cat((repeated_part_x, eval_xs), dim=0) 
+        repeated_part_y = eval_ys[:eval_position]
+        eval_ys = torch.cat((repeated_part_y, eval_ys), dim=0) 
+
+        eval_position = eval_position * 2
+
     if eval_xs is None:
         print(f"No dataset could be generated {ds_name} {bptt}")
         return None
@@ -343,7 +361,6 @@ def evaluate_position(X,
                                                             , **kwargs), None    
     
     else:
-
         print(f"Baseline Predict method {metric_used} with {max_time} maximum time.")
         _, outputs, best_configs = baseline_predict(model, eval_xs, eval_ys, categorical_feats
                                                     , eval_pos=eval_position
