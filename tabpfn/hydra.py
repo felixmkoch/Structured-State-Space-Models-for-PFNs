@@ -385,12 +385,12 @@ class HydraModel(nn.Module):
 
                 output = self.decoder(hidden_states)
 
-                output_res.append(output[:, :, -1])
+                output_res.append(output[-1, :, :])
 
             print("Size heres")
             print(output_res[0].size())
 
-            return torch.tensor(output_res)
+            return torch.stack(output_res, dim=0)
 
 
         src = torch.cat([style_src, train_x, x_src[single_eval_pos:]], 0)
