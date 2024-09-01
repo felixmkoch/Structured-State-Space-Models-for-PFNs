@@ -377,7 +377,7 @@ class HydraModel(nn.Module):
 
             for i in range(single_eval_pos, len(x_src)):
 
-                src = src = torch.cat([style_src, train_x, x_src[i].unsqueeze(0)], 0)
+                src = src = torch.cat([style_src, train_x, x_src[i:i+1]], 0)
 
                 src = src.permute(1, 0, 2)
                 hidden_states = self.mamba_backbone(src, inference_parameters=None)
