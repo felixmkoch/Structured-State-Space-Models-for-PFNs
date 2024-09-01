@@ -356,7 +356,8 @@ class HydraModel(nn.Module):
     def forward(self,
                 src: tuple,  # Inputs (src) have to be given as (x,y) or (style,x,y) tuple'
                 single_eval_pos: int,
-                single_evaluation_prompt = False
+                single_evaluation_prompt = False,
+                jrt_prompt: bool = False
                 ):
         
         if len(src) == 2: src = (None,) + src       # Check whether a style was given
@@ -370,6 +371,8 @@ class HydraModel(nn.Module):
 
         train_x = x_src[:single_eval_pos] + y_src[:single_eval_pos]
 
+        print(f"JRT PRompt: {jrt_prompt}")
+
         # Evaluate only one  by one, not every target all at once.
         if single_evaluation_prompt:
 
@@ -377,7 +380,10 @@ class HydraModel(nn.Module):
 
             for i in range(single_eval_pos, len(x_src)):
 
-                src = src = torch.cat([style_src, train_x, x_src[i:i+1]], 0)
+                src  = torch.cat([style_src, train_x, x_src[i:i+1]], 0)
+
+                if jrt_prompt:
+                    src = src.repeat(2, 1, 1)  # Single eval pos does not need to be altered because the output always returns the last element.
 
                 src = src.permute(1, 0, 2)
                 hidden_states = self.mamba_backbone(src, inference_parameters=None)
@@ -387,13 +393,13 @@ class HydraModel(nn.Module):
 
                 output_res.append(output[-1, :, :])
 
-            print("Size heres")
-            print(output_res[0].size())
-
             return torch.stack(output_res, dim=0)
 
-
         src = torch.cat([style_src, train_x, x_src[single_eval_pos:]], 0)
+
+        if jrt_prompt:
+            src = src.repeat(2, 1, 1)
+            single_eval_pos = single_eval_pos + train_x.size(0)
 
         # Before: BPTT, (batch_size / aggregate_k_gradients), emsize
         src = src.permute(1, 0, 2)

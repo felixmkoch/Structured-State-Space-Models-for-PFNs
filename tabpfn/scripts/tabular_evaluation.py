@@ -137,7 +137,7 @@ def evaluate(datasets, bptt, eval_positions, metric_used, model, device='cpu'
                         , base_path=""
                         , path_interfix=""
                         , method=""
-                        , jrt_promt=jrt_prompt
+                        , jrt_prompt=jrt_prompt
                         , single_evaluation_prompt = single_evaluation_prompt
                         , random_permutation = random_premutation
                         , **kwargs)
@@ -284,7 +284,7 @@ def evaluate_position(X,
                       metric_used=None, 
                       device='cpu', 
                       method_name="",
-                      jrt_promt=False,
+                      jrt_prompt=False,
                       random_permutation=False, 
                       per_step_normalization=False, 
                       single_evaluation_prompt=False,
@@ -318,7 +318,7 @@ def evaluate_position(X,
     if random_permutation:
         eval_xs, eval_ys = permute_data(eval_xs, eval_ys, eval_position)
 
-    if jrt_promt:
+    if jrt_prompt:
         repeated_part_x = eval_xs[:eval_position]
         eval_xs = torch.cat((repeated_part_x, eval_xs), dim=0) 
         repeated_part_y = eval_ys[:eval_position]
@@ -362,6 +362,7 @@ def evaluate_position(X,
                                                             , device=device
                                                             , single_evaluation_prompt = single_evaluation_prompt
                                                             , extend_features=True
+                                                            , jrt_prompt=jrt_prompt
                                                             , **kwargs), None    
     
     else:
