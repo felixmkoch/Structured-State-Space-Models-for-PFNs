@@ -387,7 +387,7 @@ class HydraModel(nn.Module):
 
                 print(output.size())
 
-                output_res.append(output[i])
+                output_res.append(output[single_eval_pos])
 
             return torch.tensor(output_res)
 
