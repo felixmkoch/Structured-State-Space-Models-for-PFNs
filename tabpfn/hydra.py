@@ -398,8 +398,9 @@ class HydraModel(nn.Module):
         print(f"Single eval Pos before: {single_eval_pos}")
 
         if jrt_prompt:
+            src_len_before = src.size(0)
             src = src.repeat(2, 1, 1)
-            single_eval_pos = single_eval_pos + train_x.size(0)
+            single_eval_pos = single_eval_pos + src_len_before
 
         print(f"Single eval Pos after: {single_eval_pos}")
 
