@@ -88,6 +88,7 @@ def evaluate(datasets, bptt, eval_positions, metric_used, model, device='cpu'
              , jrt_prompt=False
              , random_premutation=False
              , single_evaluation_prompt=False
+             , permutation_bagging=1
              , **kwargs):
     """
     Evaluates a list of datasets for a model function.
@@ -120,34 +121,47 @@ def evaluate(datasets, bptt, eval_positions, metric_used, model, device='cpu'
         ds_result = {}
 
         for eval_position in (eval_positions if verbose else eval_positions):
-            eval_position_real = int(dataset_bptt * 0.5) if 2 * eval_position > dataset_bptt else eval_position
-            eval_position_bptt = int(eval_position_real * 2.0)
-            r = evaluate_position(X, y, model=model
-                        , num_classes=len(torch.unique(y)) # Add: y[2]; before: y
-                        , categorical_feats = categorical_feats
-                        , bptt = eval_position_bptt
-                        , ds_name=ds_name
-                        , eval_position = eval_position_real
-                        , metric_used = metric_used
-                                  , device=device
-                        , method_name=method_name
-                        # Added those because they were wimply missing.
-                        , overwrite=True
-                        , save=False
-                        , base_path=""
-                        , path_interfix=""
-                        , method=""
-                        , jrt_prompt=jrt_prompt
-                        , single_evaluation_prompt = single_evaluation_prompt
-                        , random_permutation = random_premutation
-                        , **kwargs)
-            
+            outputs_bag = []
+            ys = None
+            for bag_num in range(permutation_bagging):
 
-            if r is None:
-                print('Execution failed', ds_name)
-                continue
+                if bag_num > 0: random_premutation = True
 
-            _, outputs, ys, best_configs, time_used = r
+                eval_position_real = int(dataset_bptt * 0.5) if 2 * eval_position > dataset_bptt else eval_position
+                eval_position_bptt = int(eval_position_real * 2.0)
+                r = evaluate_position(X, y, model=model
+                            , num_classes=len(torch.unique(y)) # Add: y[2]; before: y
+                            , categorical_feats = categorical_feats
+                            , bptt = eval_position_bptt
+                            , ds_name=ds_name
+                            , eval_position = eval_position_real
+                            , metric_used = metric_used
+                                    , device=device
+                            , method_name=method_name
+                            # Added those because they were wimply missing.
+                            , overwrite=True
+                            , save=False
+                            , base_path=""
+                            , path_interfix=""
+                            , method=""
+                            , jrt_prompt=jrt_prompt
+                            , single_evaluation_prompt = single_evaluation_prompt
+                            , random_permutation = random_premutation
+                            , **kwargs)
+                
+
+                if r is None:
+                    print('Execution failed', ds_name)
+                    continue
+
+                _, outputs, ys, best_configs, time_used = r
+
+                outputs_bag.append(outputs)
+                ys = ys
+
+            outputs_bag_stacked = torch.stack(outputs_bag, dim=0)
+
+            outputs = torch.mean(outputs_bag_stacked, dim=0)
 
             if torch.is_tensor(outputs):
                 outputs = outputs.to(outputs.device)

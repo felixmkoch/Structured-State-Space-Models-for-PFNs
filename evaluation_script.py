@@ -32,6 +32,7 @@ CONFIDENCE_LEVEL = 0.95
 
 JRT_PROMPT = False
 SINGLE_EVAL_PROMPT = False
+PERMUTATION_BAGGING = 10
 
 device = "cuda:0"
 
@@ -98,7 +99,7 @@ def do_evaluation(eval_list):
 
         # Key is the dataset id (did) and value the mean error on it.
         result_dict["hydra"] = eval_helper.do_evaluation_custom(hydra_model, bptt=bptt_here, eval_positions=hydra_config["eval_positions"], metric=METRIC_USED, device=device, method_name="hydra",
-                                        evaluation_type=EVALUATION_TYPE, split_numbers=SPLIT_NUMBERS, jrt_prompt=JRT_PROMPT, single_evaluation_prompt=SINGLE_EVAL_PROMPT)
+                                        evaluation_type=EVALUATION_TYPE, split_numbers=SPLIT_NUMBERS, jrt_prompt=JRT_PROMPT, single_evaluation_prompt=SINGLE_EVAL_PROMPT, permutation_bagging=PERMUTATION_BAGGING)
 
 
     #
