@@ -318,14 +318,6 @@ def evaluate_position(X,
     if random_permutation:
         eval_xs, eval_ys = permute_data(eval_xs, eval_ys, eval_position)
 
-    if jrt_prompt:
-        repeated_part_x = eval_xs[:eval_position]
-        eval_xs = torch.cat((repeated_part_x, eval_xs), dim=0) 
-        repeated_part_y = eval_ys[:eval_position]
-        eval_ys = torch.cat((repeated_part_y, eval_ys), dim=0) 
-
-        eval_position = eval_position * 2
-
     if eval_xs is None:
         print(f"No dataset could be generated {ds_name} {bptt}")
         return None
