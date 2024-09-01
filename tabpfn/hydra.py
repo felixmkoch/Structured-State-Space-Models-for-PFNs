@@ -395,14 +395,10 @@ class HydraModel(nn.Module):
 
         src = torch.cat([style_src, train_x, x_src[single_eval_pos:]], 0)
 
-        print(f"Single eval Pos before: {single_eval_pos}")
-
         if jrt_prompt:
             src_len_before = src.size(0)
             src = src.repeat(2, 1, 1)
             single_eval_pos = single_eval_pos + src_len_before
-
-        print(f"Single eval Pos after: {single_eval_pos}")
 
         # Before: BPTT, (batch_size / aggregate_k_gradients), emsize
         src = src.permute(1, 0, 2)
