@@ -385,8 +385,6 @@ class HydraModel(nn.Module):
 
                 output = self.decoder(hidden_states)
 
-                print(output.size())
-
                 output_res.append(output[single_eval_pos])
 
             return torch.tensor(output_res)
@@ -405,4 +403,5 @@ class HydraModel(nn.Module):
         # After: BPTT, (batch_size / aggregate_k_gradients), emsize
 
         output = self.decoder(hidden_states)
+        print(output[single_eval_pos+len(style_src):].size())
         return output[single_eval_pos+len(style_src):]
