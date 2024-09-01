@@ -385,7 +385,7 @@ class HydraModel(nn.Module):
 
                 output = self.decoder(hidden_states)
 
-                output = self.decoder(hidden_states)
+                print(output.size())
 
                 output_res.append(output[i])
 
