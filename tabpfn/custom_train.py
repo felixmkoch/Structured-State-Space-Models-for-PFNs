@@ -224,7 +224,7 @@ def train(priordataloader_class,
         # Batch [int] is just a counter from 0 to num_batches.
         # Data [tuple] Of length 3 [BPTT, batch_size/aggregate_k_gradients, num_features] [BPTT, batch_size/aggregate_k_gradients]
         # Targets [Tensor] is a tensor of 1. and 0.. [BPTT, batch_size/aggregate_k_gradients]
-        # Note: Targets and Data[3] seem to be the same.
+        # Note: Targets and Data[2] seem to be the same.
         # Single_eval_pos idk what this does.
         
         for batch, (data, targets, single_eval_pos) in enumerate(dl):

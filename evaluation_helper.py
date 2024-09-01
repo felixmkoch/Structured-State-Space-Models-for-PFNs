@@ -123,6 +123,7 @@ class EvalHelper:
                              max_time=300, 
                              split_numbers=[1],
                              jrt_prompt=False,
+                             single_evaluation_prompt=False,
                              permutation_random=False,
                              return_whole_output=False):
 
@@ -157,9 +158,9 @@ class EvalHelper:
             result[did] = []
             for split_number in split_numbers:
                 if return_whole_output:
-                    result[did].append(evaluate(self.limit_dict[did], bptt, eval_positions, metric, model, device, method_name=method_name, max_time=max_time, split_number=split_number, jrt_prompt=jrt_prompt, random_premutation=permutation_random))
+                    result[did].append(evaluate(self.limit_dict[did], bptt, eval_positions, metric, model, device, method_name=method_name, max_time=max_time, split_number=split_number, jrt_prompt=jrt_prompt, random_premutation=permutation_random, single_evaluation_prompt=single_evaluation_prompt))
                 else:
-                    result[did].append(evaluate(self.limit_dict[did], bptt, eval_positions, metric, model, device, method_name=method_name, max_time=max_time, split_number=split_number, jrt_prompt=jrt_prompt, random_premutation=permutation_random)["mean_metric"].item())
+                    result[did].append(evaluate(self.limit_dict[did], bptt, eval_positions, metric, model, device, method_name=method_name, max_time=max_time, split_number=split_number, jrt_prompt=jrt_prompt, random_premutation=permutation_random, single_evaluation_prompt=single_evaluation_prompt)["mean_metric"].item())
                 
         return result
     

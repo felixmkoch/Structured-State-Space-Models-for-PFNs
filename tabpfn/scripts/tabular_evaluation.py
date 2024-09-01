@@ -87,6 +87,7 @@ def evaluate(datasets, bptt, eval_positions, metric_used, model, device='cpu'
              , method_name=""
              , jrt_prompt=False
              , random_premutation=False
+             , single_evaluation_prompt=False
              , **kwargs):
     """
     Evaluates a list of datasets for a model function.
@@ -137,8 +138,9 @@ def evaluate(datasets, bptt, eval_positions, metric_used, model, device='cpu'
                         , path_interfix=""
                         , method=""
                         , jrt_promt=jrt_prompt
+                        , single_evaluation_prompt = single_evaluation_prompt
                         , random_permutation = random_premutation
-                        ,**kwargs)
+                        , **kwargs)
             
 
             if r is None:
@@ -285,6 +287,7 @@ def evaluate_position(X,
                       jrt_promt=False,
                       random_permutation=False, 
                       per_step_normalization=False, 
+                      single_evaluation_prompt=False,
                       **kwargs):
     """
     Evaluates a dataset with a 'bptt' number of training samples.
@@ -357,6 +360,7 @@ def evaluate_position(X,
                                                             , categorical_feats=categorical_feats
                                                             , inference_mode=True
                                                             , device=device
+                                                            , single_evaluation_prompt = single_evaluation_prompt
                                                             , extend_features=True
                                                             , **kwargs), None    
     

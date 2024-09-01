@@ -338,10 +338,6 @@ class HydraModel(nn.Module):
             dtype=self.dtype
         )
 
-        #self.linear1 = nn.Linear(ninp, nhid)
-
-        #self.activation_function = nn.GELU
-
         self.decoder = nn.Sequential(nn.Linear(ninp, nhid), nn.GELU(), nn.Linear(nhid, n_out))
 
         self.norm_f = (nn.LayerNorm if not rms_norm else RMSNorm)(
@@ -359,7 +355,8 @@ class HydraModel(nn.Module):
 
     def forward(self,
                 src: tuple,  # Inputs (src) have to be given as (x,y) or (style,x,y) tuple'
-                single_eval_pos: int
+                single_eval_pos: int,
+                single_evaluation_prompt = False
                 ):
         
         if len(src) == 2: src = (None,) + src       # Check whether a style was given
@@ -372,6 +369,28 @@ class HydraModel(nn.Module):
         y_src = self.y_encoder(y_src.unsqueeze(-1) if len(y_src.shape) < len(x_src.shape) else y_src)
 
         train_x = x_src[:single_eval_pos] + y_src[:single_eval_pos]
+
+        # Evaluate only one  by one, not every target all at once.
+        if single_evaluation_prompt:
+
+            output_res = []
+
+            for i in range(single_eval_pos, len(x_src)):
+
+                src = src = torch.cat([style_src, train_x, x_src[i]], 0)
+
+                src = src.permute(1, 0, 2)
+                hidden_states = self.mamba_backbone(src, inference_parameters=None)
+                hidden_states = hidden_states.permute(1, 0, 2)
+
+                output = self.decoder(hidden_states)
+
+                output = self.decoder(hidden_states)
+
+                output_res.append(output[i])
+
+            return torch.tensor(output_res)
+
 
         src = torch.cat([style_src, train_x, x_src[single_eval_pos:]], 0)
 
