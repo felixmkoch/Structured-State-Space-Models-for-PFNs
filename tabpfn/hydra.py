@@ -371,8 +371,6 @@ class HydraModel(nn.Module):
 
         train_x = x_src[:single_eval_pos] + y_src[:single_eval_pos]
 
-        print(f"JRT PRompt: {jrt_prompt}")
-
         # Evaluate only one  by one, not every target all at once.
         if single_evaluation_prompt:
 
@@ -397,9 +395,13 @@ class HydraModel(nn.Module):
 
         src = torch.cat([style_src, train_x, x_src[single_eval_pos:]], 0)
 
+        print(f"Single eval Pos before: {single_eval_pos}")
+
         if jrt_prompt:
             src = src.repeat(2, 1, 1)
             single_eval_pos = single_eval_pos + train_x.size(0)
+
+        print(f"Single eval Pos after: {single_eval_pos}")
 
         # Before: BPTT, (batch_size / aggregate_k_gradients), emsize
         src = src.permute(1, 0, 2)
@@ -412,4 +414,4 @@ class HydraModel(nn.Module):
         # After: BPTT, (batch_size / aggregate_k_gradients), emsize
 
         output = self.decoder(hidden_states)
-        return output[single_eval_pos+len(style_src):]
+        return output[single_eval_pos + len(style_src):]
