@@ -99,10 +99,10 @@ def do_evaluation(eval_list, bptt):
                                                     only_inference=True, model_path_custom=HYDRA_MODEL_NAME)
 
         # That's the real transformer model here.
-        transformer_model = t_model[2]
+        hydra_model = h_model[2]
 
         # Key is the dataset id (did) and value the mean error on it.
-        result_dict["hydra"] = eval_helper.do_evaluation_custom(h_model, bptt=bptt, eval_positions=eval_position, metric=METRIC_USED, device=device, method_name="hydra",
+        result_dict["hydra"] = eval_helper.do_evaluation_custom(hydra_model, bptt=bptt, eval_positions=eval_position, metric=METRIC_USED, device=device, method_name="hydra",
                                         evaluation_type=EVALUATION_TYPE, split_numbers=SPLIT_NUMBERS, jrt_prompt=False, single_evaluation_prompt=False, permutation_bagging=25, sample_bagging=0)
     
 
