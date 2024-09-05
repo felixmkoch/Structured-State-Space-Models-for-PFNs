@@ -34,7 +34,7 @@ def load_model_only_inference(path, filename, device, model_name=""):
     mamba_num_layers = config_sample.get("num_layers", config_sample.get("nlayers"))
 
     # Quick Fix for legacy Mamba models
-    mamba_num_layers = 12
+    mamba_num_layers = 24
 
     device = device if torch.cuda.is_available() else 'cpu:0'
     encoder = encoder(config_sample['num_features'], emsize)
