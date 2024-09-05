@@ -6,6 +6,7 @@
 wandb/*
 */wandb/*
 *.cpkt
+*/__pycache__/*
 
 ### CUDA ###
 *.i

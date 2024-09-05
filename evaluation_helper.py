@@ -125,7 +125,8 @@ class EvalHelper:
                              jrt_prompt=False,
                              single_evaluation_prompt=False,
                              permutation_random=False,
-                             permutation_bagging=False,
+                             permutation_bagging=1,
+                             sample_bagging=0,
                              return_whole_output=False):
 
         '''
@@ -159,9 +160,9 @@ class EvalHelper:
             result[did] = []
             for split_number in split_numbers:
                 if return_whole_output:
-                    result[did].append(evaluate(self.limit_dict[did], bptt, eval_positions, metric, model, device, method_name=method_name, max_time=max_time, split_number=split_number, jrt_prompt=jrt_prompt, random_premutation=permutation_random, single_evaluation_prompt=single_evaluation_prompt, permutation_bagging=permutation_bagging))
+                    result[did].append(evaluate(self.limit_dict[did], bptt, eval_positions, metric, model, device, method_name=method_name, max_time=max_time, split_number=split_number, jrt_prompt=jrt_prompt, random_premutation=permutation_random, single_evaluation_prompt=single_evaluation_prompt, permutation_bagging=permutation_bagging, sample_bagging=sample_bagging))
                 else:
-                    result[did].append(evaluate(self.limit_dict[did], bptt, eval_positions, metric, model, device, method_name=method_name, max_time=max_time, split_number=split_number, jrt_prompt=jrt_prompt, random_premutation=permutation_random, single_evaluation_prompt=single_evaluation_prompt, permutation_bagging=permutation_bagging)["mean_metric"].item())
+                    result[did].append(evaluate(self.limit_dict[did], bptt, eval_positions, metric, model, device, method_name=method_name, max_time=max_time, split_number=split_number, jrt_prompt=jrt_prompt, random_premutation=permutation_random, single_evaluation_prompt=single_evaluation_prompt, permutation_bagging=permutation_bagging, sample_bagging=sample_bagging)["mean_metric"].item())
                 
         return result
     

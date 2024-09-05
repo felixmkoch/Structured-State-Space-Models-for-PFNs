@@ -89,6 +89,7 @@ def evaluate(datasets, bptt, eval_positions, metric_used, model, device='cpu'
              , random_premutation=False
              , single_evaluation_prompt=False
              , permutation_bagging=1
+             , sample_bagging=0
              , **kwargs):
     """
     Evaluates a list of datasets for a model function.
@@ -125,7 +126,9 @@ def evaluate(datasets, bptt, eval_positions, metric_used, model, device='cpu'
             ys = None
             for bag_num in range(permutation_bagging):
 
-                if bag_num > 0: random_premutation = True
+                if bag_num > 0 and permutation_bagging > 1: random_premutation = True
+
+                if sample_bagging and sample_bagging > 0: random_premutation = False
 
                 eval_position_real = int(dataset_bptt * 0.5) if 2 * eval_position > dataset_bptt else eval_position
                 eval_position_bptt = int(eval_position_real * 2.0)
@@ -147,6 +150,7 @@ def evaluate(datasets, bptt, eval_positions, metric_used, model, device='cpu'
                             , jrt_prompt=jrt_prompt
                             , single_evaluation_prompt = single_evaluation_prompt
                             , random_permutation = random_premutation
+                            , sample_bagging=sample_bagging
                             , **kwargs)
                 
 
@@ -281,6 +285,27 @@ def permute_data(x, y, eval_position):
     return data_return, targets_return
 
 
+def sample_train(x, y, eval_position, bag_size):
+
+    generator = torch.Generator()
+    rng = np.random.RandomState()
+    gen_seed = rng.randint(1e7)
+    generator.manual_seed(gen_seed)
+
+    first_part_x = x[:eval_position]
+    first_part_y = y[:eval_position]
+
+    indices = torch.randint(0, eval_position, (bag_size,), generator=generator)
+
+    x_first_sampled = first_part_x[indices]
+    y_first_sampled = first_part_y[indices]
+
+    data_return = torch.cat((x_first_sampled, x[eval_position:]), dim=0)
+    targets_return = torch.cat((y_first_sampled, y[eval_position:]), dim=0)
+
+    return data_return, targets_return
+
+
 def evaluate_position(X, 
                       y, 
                       categorical_feats, 
@@ -302,6 +327,7 @@ def evaluate_position(X,
                       random_permutation=False, 
                       per_step_normalization=False, 
                       single_evaluation_prompt=False,
+                      sample_bagging=0,
                       **kwargs):
     """
     Evaluates a dataset with a 'bptt' number of training samples.
@@ -331,6 +357,10 @@ def evaluate_position(X,
     
     if random_permutation:
         eval_xs, eval_ys = permute_data(eval_xs, eval_ys, eval_position)
+
+    if sample_bagging and sample_bagging > 0:
+        eval_xs, eval_ys = sample_train(eval_xs, eval_ys, eval_position, sample_bagging)
+        eval_position = sample_bagging
 
     if eval_xs is None:
         print(f"No dataset could be generated {ds_name} {bptt}")
