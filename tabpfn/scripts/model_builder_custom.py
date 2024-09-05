@@ -33,10 +33,11 @@ def load_model_only_inference(path, filename, device, model_name=""):
     emsize = config_sample["emsize"]
     mamba_num_layers = config_sample.get("num_layers", config_sample.get("nlayers"))
 
+    # Quick Fix for legacy Mamba models
+    mamba_num_layers = 12
+
     device = device if torch.cuda.is_available() else 'cpu:0'
     encoder = encoder(config_sample['num_features'], emsize)
-
-    print(config_sample)
 
     nhid = emsize * config_sample['nhid_factor']
     y_encoder_generator = encoders.get_Canonical(config_sample['max_num_classes']) \
