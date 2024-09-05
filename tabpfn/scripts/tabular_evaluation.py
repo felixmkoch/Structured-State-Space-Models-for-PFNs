@@ -389,6 +389,7 @@ def evaluate_position(X,
                                                             , inference_mode=True
                                                             , device=device
                                                             , extend_features=True
+                                                            , jrt_prompt=jrt_prompt
                                                             , **kwargs), None
             
         if method_name == "hydra":

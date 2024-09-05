@@ -355,6 +355,7 @@ def mamba_predict(model, eval_xs, eval_ys, eval_position,
                         seed=0,
                         no_grad=True,
                         return_logits=False,
+                        jrt_prompt=False,
                         **kwargs):
     """
 
@@ -392,7 +393,7 @@ def mamba_predict(model, eval_xs, eval_ys, eval_position,
             start = time.time()
             output = model(
                     (used_style.repeat(eval_xs.shape[1], 1) if used_style is not None else None, eval_xs, eval_ys.float()),
-                    single_eval_pos=eval_position)[:, :, 0:num_classes]
+                    single_eval_pos=eval_position, jrt_prompt=jrt_prompt)[:, :, 0:num_classes]
 
             output = output[:, :, 0:num_classes] / torch.exp(softmax_temperature)
             if not return_logits:

@@ -262,7 +262,8 @@ class MambaModel(nn.Module):
 
     def forward(self,
                 src: tuple,  # Inputs (src) have to be given as (x,y) or (style,x,y) tuple'
-                single_eval_pos: int
+                single_eval_pos: int,
+                jrt_prompt: bool = False
                 ):
         
         if len(src) == 2: src = (None,) + src       # Check whether a style was given
@@ -278,8 +279,10 @@ class MambaModel(nn.Module):
 
         src = torch.cat([style_src, train_x, x_src[single_eval_pos:]], 0)
 
-        # Emsize -> Mamba hidden size --- times the hidden factor from the config.
-        #src = self.linear1(src)
+        if jrt_prompt:
+            src_len_before = src.size(0)
+            src = src.repeat(2, 1, 1)
+            single_eval_pos = single_eval_pos + src_len_before
 
         # Before: BPTT, (batch_size / aggregate_k_gradients), emsize
         src = src.permute(1, 0, 2)
