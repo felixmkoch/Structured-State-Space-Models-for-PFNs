@@ -36,6 +36,8 @@ def load_model_only_inference(path, filename, device, model_name=""):
     device = device if torch.cuda.is_available() else 'cpu:0'
     encoder = encoder(config_sample['num_features'], emsize)
 
+    print(config_sample)
+
     nhid = emsize * config_sample['nhid_factor']
     y_encoder_generator = encoders.get_Canonical(config_sample['max_num_classes']) \
         if config_sample.get('canonical_y_encoder', False) else encoders.Linear
