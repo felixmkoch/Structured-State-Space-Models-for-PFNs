@@ -12,21 +12,21 @@ from scipy import stats
 import pandas as pd
 
 
-#EVALUATION_TYPE = "openmlcc18_large"
-EVALUATION_TYPE = "openmlcc18"
+EVALUATION_TYPE = "openmlcc18_large"
+#EVALUATION_TYPE = "openmlcc18"
 
-EVALUATION_METHODS = ["mamba", "transformer", "hydra"]
+EVALUATION_METHODS = ["hydra"]
 
 METRIC_USED = tabular_metrics.auc_metric
 
-RESULT_CSV_SAVE_DIR = os.path.join("result_csvs", "bptt_cc18_large_cropped.csv")
+RESULT_CSV_SAVE_DIR = os.path.join("result_csvs", "bptt_cc18_large_cropped_hydra.csv")
 
 #MAMBA_MODEL_NAME = "tabpfn/models_diff/mamba_test_model.cpkt"
 MAMBA_MODEL_NAME = "tabpfn/models_diff/mamba_small.cpkt"
 TRANSFORMER_MODEL_NAME = "tabpfn/models_diff/tabpfn_transformer_model.cpkt"
 HYDRA_MODEL_NAME = "tabpfn/models_diff/hydra_small.cpkt"
 
-BPTTS = [i for i in range(50, 2500, 50)]
+BPTTS = [i for i in range(100, 5000, 100)]
 #BPTTS = [100, 150]
 SPLIT_NUMBERS = [1, 2, 3, 4, 5]
 CONFIDENCE_LEVEL = 0.95
@@ -96,7 +96,7 @@ def do_evaluation(eval_list, bptt):
     if "hydra" in eval_list:
         # Load Transformer Model (Yes this is a bit scuffed).
         h_model, hydra_config, results_file = hydra_load_model_workflow(2, -1, add_name="", base_path="", device=device,eval_addition='', 
-                                                    only_inference=True, model_path_custom=TRANSFORMER_MODEL_NAME)
+                                                    only_inference=True, model_path_custom=HYDRA_MODEL_NAME)
 
         # That's the real transformer model here.
         transformer_model = t_model[2]
