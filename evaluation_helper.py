@@ -106,9 +106,9 @@ class EvalHelper:
 
         for ds_name, X, y, categorical_feats, _, _ in ds:
 
-            num_classes = torch.unique(y).numel()
+            #num_classes = torch.unique(y).numel()
             # Apply transformation for "multiclass"
-            if not eval_filters.get("multiclass", True) and num_classes > 2: continue
+            #if not eval_filters.get("multiclass", True) and num_classes > 2: continue
             
             # Apply transformation for "categorical"
             if not eval_filters.get("categorical", False):
@@ -130,6 +130,9 @@ class EvalHelper:
     
 
     def make_limit_datasets(self, max_classes, max_features, limit_dids, eval_filters):
+
+        if not eval_filters.get("multiclass", True):
+            max_classes = 2
 
         for did in limit_dids:
             ds_name, X, y, categorical_feats, _, _ = self.datasets_data[did][0]
