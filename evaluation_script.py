@@ -24,7 +24,7 @@ EVALUATION_TYPE_FILTERS = {
     "multiclass": False
 }
 
-EVALUATION_METHODS = ["xgboost"]
+EVALUATION_METHODS = ["hydra"]
 
 METRIC_USED = tabular_metrics.auc_metric
 
@@ -32,9 +32,9 @@ RESULT_CSV_SAVE_DIR = os.path.join("result_csvs", "test.csv")
 
 MAMBA_MODEL_NAME = "tabpfn/models_diff/mamba_small.cpkt"
 TRANSFORMER_MODEL_NAME = "tabpfn/models_diff/tabpfn_transformer_model.cpkt"
-HYDRA_MODEL_NAME = "tabpfn/models_diff/test.cpkt"
+HYDRA_MODEL_NAME = "tabpfn/models_diff/hydra_small.cpkt"
 
-SPLIT_NUMBERS = [1]
+SPLIT_NUMBERS = [1, 2, 3, 4, 5]
 
 bptt_here = 1000
 max_time = 3600
@@ -42,8 +42,8 @@ CONFIDENCE_LEVEL = 0.95
 
 JRT_PROMPT = False
 SINGLE_EVAL_PROMPT = False
-PERMUTATION_BAGGING = 1
-SAMPLE_BAGGING = 0
+PERMUTATION_BAGGING = 20
+SAMPLE_BAGGING = 10
 
 device = "cuda:0"
 
