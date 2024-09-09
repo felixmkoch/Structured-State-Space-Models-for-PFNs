@@ -188,7 +188,7 @@ class EvalHelper:
 
         result = {}
 
-        for did in ds:
+        for did in self.limit_dict.keys():
             result[did] = []
             for split_number in split_numbers:
                 if return_whole_output:
