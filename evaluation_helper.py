@@ -140,7 +140,7 @@ class EvalHelper:
 
             #new_data = self.apply_eval_feat_transformations([new_data], eval_filters)
 
-            if len(new_data): self.limit_dict[did] = new_data
+            if len(new_data): self.limit_dict[did] = [new_data]
 
     
 
