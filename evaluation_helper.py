@@ -99,14 +99,45 @@ class EvalHelper:
         # Return the limited dataset
         return (ds_name, X_limited, y_limited, categorical_feats, None, None)
     
+
+    def apply_eval_feat_transformations(self, ds, eval_filters):
+
+        transformed_datasets = []
+
+        for ds_name, X, y, categorical_feats, _, _ in ds:
+
+            num_classes = torch.unique(y).numel()
+            # Apply transformation for "multiclass"
+            if not eval_filters.get("multiclass", True) and num_classes > 2: continue
+            
+            # Apply transformation for "categorical"
+            if not eval_filters.get("categorical", False):
+                if categorical_feats:
+                    non_categorical_indices = [i for i in range(X.shape[1]) if i not in categorical_feats]
+                    X = X[:, non_categorical_indices]
+
+            # Apply transformation for "nans"
+            if eval_filters.get("nans", False):
+                # Remove all rows with NaN values
+                nan_mask = torch.isnan(X).any(dim=1)  # Find rows that contain any nann values
+                X = X[~nan_mask]  # Keep only rows that do not have nans
+                y = y[~nan_mask] 
+
+            # After applying all transformations, add the transformed dataset to the result list
+            transformed_datasets.append((ds_name, X, y, categorical_feats, _, _))
+
+        return transformed_datasets
     
 
-    def make_limit_datasets(self, max_classes, max_features, limit_dids):
+    def make_limit_datasets(self, max_classes, max_features, limit_dids, eval_filters):
 
         for did in limit_dids:
             ds_name, X, y, categorical_feats, _, _ = self.datasets_data[did][0]
             new_data = self.limit_dataset(ds_name, X, y, categorical_feats, max_classes, max_features)
-            self.limit_dict[did] = [new_data]
+
+            new_data = self.apply_eval_feat_transformations([new_data], eval_filters)
+
+            if len(new_data): self.limit_dict[did] = new_data
 
     
 
@@ -127,6 +158,7 @@ class EvalHelper:
                              permutation_random=False,
                              permutation_bagging=1,
                              sample_bagging=0,
+                             eval_filters={},
                              return_whole_output=False):
 
         '''
@@ -150,7 +182,7 @@ class EvalHelper:
             
         self.check_datasets_data(ds)
 
-        self.make_limit_datasets(max_classes, max_features, ds)
+        self.make_limit_datasets(max_classes, max_features, ds, eval_filters)
 
         print("Evaluating custom dataset ... ")
 

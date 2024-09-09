@@ -14,7 +14,17 @@ import pandas as pd
 #EVALUATION_TYPE = "openmlcc18_large"
 EVALUATION_TYPE = "openmlcc18"
 
-EVALUATION_METHODS = ["mamba"]
+#
+# Here: True means to keep them, false to omit
+#
+
+EVALUATION_TYPE_FILTERS = {
+    "categorical": True,
+    "nans": True,
+    "multiclass": False
+}
+
+EVALUATION_METHODS = ["xgboost"]
 
 METRIC_USED = tabular_metrics.auc_metric
 
@@ -33,7 +43,7 @@ CONFIDENCE_LEVEL = 0.95
 JRT_PROMPT = False
 SINGLE_EVAL_PROMPT = False
 PERMUTATION_BAGGING = 1
-SAMPLE_BAGGING = 10
+SAMPLE_BAGGING = 0
 
 device = "cuda:0"
 
@@ -69,7 +79,7 @@ def do_evaluation(eval_list):
 
         # Key is the dataset id (did) and value the mean error on it.
         result_dict["mamba"] = eval_helper.do_evaluation_custom(mamba_model, bptt=bptt_here, eval_positions=mamba_config["eval_positions"], metric=METRIC_USED, device=device, method_name="mamba",
-                                        evaluation_type=EVALUATION_TYPE, split_numbers=SPLIT_NUMBERS, jrt_prompt=JRT_PROMPT, permutation_bagging=PERMUTATION_BAGGING, sample_bagging=SAMPLE_BAGGING)
+                                        evaluation_type=EVALUATION_TYPE, split_numbers=SPLIT_NUMBERS, jrt_prompt=JRT_PROMPT, permutation_bagging=PERMUTATION_BAGGING, sample_bagging=SAMPLE_BAGGING, eval_filters=EVALUATION_TYPE_FILTERS)
 
     #
     # TRANSFORMER EVALUATION
@@ -84,7 +94,7 @@ def do_evaluation(eval_list):
 
         # Key is the dataset id (did) and value the mean error on it.
         result_dict["transformer"] = eval_helper.do_evaluation_custom(transformer_model, bptt=bptt_here, eval_positions=transformer_config["eval_positions"], metric=METRIC_USED, device=device, method_name="transformer",
-                                        evaluation_type=EVALUATION_TYPE, split_numbers=SPLIT_NUMBERS, jrt_prompt=JRT_PROMPT)
+                                        evaluation_type=EVALUATION_TYPE, split_numbers=SPLIT_NUMBERS, jrt_prompt=JRT_PROMPT, eval_filters=EVALUATION_TYPE_FILTERS)
 
 
     #
@@ -93,7 +103,7 @@ def do_evaluation(eval_list):
     if "hydra" in eval_list:
         # Load Transformer Model (Yes this is a bit scuffed).
         h_model, hydra_config, results_file = hydra_load_model_workflow(2, -1, add_name="", base_path="", device=device,eval_addition='', 
-                                                    only_inference=True, model_path_custom=HYDRA_MODEL_NAME)
+                                                    only_inference=True, model_path_custom=HYDRA_MODEL_NAME, eval_filters=EVALUATION_TYPE_FILTERS)
 
         # That's the real transformer model here.
         hydra_model = h_model[2]
@@ -105,6 +115,7 @@ def do_evaluation(eval_list):
 
     #
     # XGBoost Evaluation
+    # Note: This doesn't work anymore in Python 3.10 ...
     #
     if "xgboost" in eval_list:
         # That's the xgboost metric function serving as a model
@@ -112,8 +123,8 @@ def do_evaluation(eval_list):
 
         # Key is the dataset id (did) and value the mean error on it. We use mamba model params as bptt and eval_positions
         # NOTE: Current max time is 300, aka 5 minutes. Need to change this maybe.
-        result_dict["xgboost"] = eval_helper.do_evaluation_custom(xgboost_model, bptt=bptt_here, eval_positions=mamba_config["eval_positions"], metric=METRIC_USED, device=device, method_name="xgb",
-                                        evaluation_type=EVALUATION_TYPE, max_time=max_time)
+        result_dict["xgboost"] = eval_helper.do_evaluation_custom(xgboost_model, bptt=bptt_here, eval_positions=[999999], metric=METRIC_USED, device=device, method_name="xgb",
+                                        evaluation_type=EVALUATION_TYPE, max_time=max_time, eval_filters=EVALUATION_TYPE_FILTERS)
 
 
     #
@@ -125,7 +136,7 @@ def do_evaluation(eval_list):
 
         # Key is the dataset id (did) and value the mean error on it. We use mamba model params as bptt and eval_positions
         result_dict["knn"] = eval_helper.do_evaluation_custom(knn_model, bptt=bptt_here, eval_positions=mamba_config["eval_positions"], metric=METRIC_USED, device=device, method_name="knn",
-                                        evaluation_type=EVALUATION_TYPE, max_time=max_time)
+                                        evaluation_type=EVALUATION_TYPE, max_time=max_time, eval_filters=EVALUATION_TYPE_FILTERS)
     
 
     return result_dict
