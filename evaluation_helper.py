@@ -138,9 +138,9 @@ class EvalHelper:
             ds_name, X, y, categorical_feats, _, _ = self.datasets_data[did][0]
             new_data = self.limit_dataset(ds_name, X, y, categorical_feats, max_classes, max_features)
 
-            #new_data = self.apply_eval_feat_transformations([new_data], eval_filters)
+            new_data = self.apply_eval_feat_transformations([new_data], eval_filters)
 
-            if len(new_data): self.limit_dict[did] = [new_data]
+            if len(new_data): self.limit_dict[did] = new_data
 
     
 
