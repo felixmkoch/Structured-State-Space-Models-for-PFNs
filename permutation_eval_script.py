@@ -18,7 +18,7 @@ EVALUATION_TYPE = "openmlcc18"
 
 NUM_RANDOM_PERMUTATIONS = 2
 
-EVALUATION_METHOD = "transformer"
+EVALUATION_METHOD = "mamba"
 
 METRIC_USED = tabular_metrics.auc_metric
 
@@ -26,7 +26,7 @@ RESULT_CSV_SAVE_DIR = os.path.join("result_csvs", "permutation_eval_res.csv")
 
 MAMBA_MODEL_NAME = "tabpfn/models_diff/mamba_small.cpkt"
 TRANSFORMER_MODEL_NAME = "tabpfn/models_diff/tabpfn_transformer_model.cpkt"
-HYDRA_MODEL_NAME = "tabpfn/models_diff/mamba_test.cpkt"
+HYDRA_MODEL_NAME = "tabpfn/models_diff/hydra_small.cpkt"
 
 # Only use one element in the list please
 SPLIT_NUMBERS = [1]
