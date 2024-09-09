@@ -202,6 +202,13 @@ class EvalHelper:
         return result
     
 
+    def get_dids_by_string(self, s):
+
+        if s == "openmlcc18": return self.openml_cc18_dids_small
+
+        return None
+
+
 
     ''' Need to fix this later
     def do_naive_evaluation(self):
