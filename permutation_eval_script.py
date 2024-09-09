@@ -38,6 +38,9 @@ bptt_here = 1000
 
 device = "cuda:0"
 
+PERMUTATION_BAGGING = 20
+SAMPLE_BAGGING = 1024
+
 eval_helper = EvalHelper()
 
 def do_permutation_evaluation(eval_method, random_premutation=True):
@@ -57,7 +60,7 @@ def do_permutation_evaluation(eval_method, random_premutation=True):
 
         # Key is the dataset id (did) and value the mean error on it.
         result_dict["mamba"] = eval_helper.do_evaluation_custom(mamba_model, bptt=bptt_here, eval_positions=mamba_config["eval_positions"], metric=METRIC_USED, device=device, method_name="mamba",
-                                        evaluation_type=EVALUATION_TYPE, split_numbers=SPLIT_NUMBERS, jrt_prompt=JRT_PROMPT, permutation_random=random_premutation, return_whole_output=True)
+                                        evaluation_type=EVALUATION_TYPE, split_numbers=SPLIT_NUMBERS, jrt_prompt=JRT_PROMPT, permutation_random=random_premutation, permutation_bagging=PERMUTATION_BAGGING, sample_bagging=SAMPLE_BAGGING, return_whole_output=True)
 
     #
     # TRANSFORMER EVALUATION
@@ -88,7 +91,7 @@ def do_permutation_evaluation(eval_method, random_premutation=True):
 
         # Key is the dataset id (did) and value the mean error on it.
         result_dict["hydra"] = eval_helper.do_evaluation_custom(hydra_model, bptt=bptt_here, eval_positions=hydra_config["eval_positions"], metric=METRIC_USED, device=device, method_name="hydra",
-                                        evaluation_type=EVALUATION_TYPE, split_numbers=SPLIT_NUMBERS, jrt_prompt=JRT_PROMPT, permutation_random=random_premutation, return_whole_output=True)
+                                        evaluation_type=EVALUATION_TYPE, split_numbers=SPLIT_NUMBERS, jrt_prompt=JRT_PROMPT, permutation_random=random_premutation, permutation_bagging=PERMUTATION_BAGGING, sample_bagging=SAMPLE_BAGGING, return_whole_output=True)
 
 
     #
