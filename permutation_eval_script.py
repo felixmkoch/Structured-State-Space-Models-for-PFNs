@@ -8,13 +8,13 @@ from tabpfn.scripts.transformer_prediction_interface import load_model_workflow 
 from tabpfn.scripts.hydra_prediction_interface import load_model_workflow as hydra_load_model_workflow
 from tabpfn.scripts.tabular_baselines import *
 from scipy import stats
+import torch.nn.functional as F
 
 import pandas as pd
 
 
 #EVALUATION_TYPE = "openmlcc18_large"
-#EVALUATION_TYPE = "openmlcc18"
-EVALUATION_TYPE = 11
+EVALUATION_TYPE = "openmlcc18"
 
 NUM_RANDOM_PERMUTATIONS = 2
 
@@ -119,6 +119,17 @@ def do_permutation_evaluation(eval_method, random_premutation=True):
     return result_dict
 
 
+def calc_kl_div(p, q):
+
+    # Convert p to log probabilities
+    log_p = torch.log(p)
+
+    # Compute KL divergence: F.kl_div(log_p, q) computes D_KL(P || Q)
+    kl_divergence = F.kl_div(log_p, q, reduction='batchmean')
+
+    return kl_divergence.item()
+
+
 if __name__ == "__main__":
 
     results = []
@@ -127,50 +138,26 @@ if __name__ == "__main__":
     for i in range(NUM_RANDOM_PERMUTATIONS):
         # output is method_dict -> did -> split_number -> output_dict
         outputs = do_permutation_evaluation(EVALUATION_METHOD, random_premutation=True)
-        last_outputs = outputs[EVALUATION_METHOD][EVALUATION_TYPE][0]["last_outputs"]
-        mean_metric = outputs[EVALUATION_METHOD][EVALUATION_TYPE][0]["mean_metric"]
+
+        last_outputs = {}
+        mean_metric = {}
+
+        for did in eval_helper.get_dids_by_string("openmlcc18"):
+            last_outputs[did] = outputs[EVALUATION_METHOD][did][0]["last_outputs"]
+            mean_metric[did] = outputs[EVALUATION_METHOD][did][0]["mean_metric"]
 
         mean_metrics.append(mean_metric)
         results.append(last_outputs)
 
-        #print(last_outputs)
 
-    print(f"Mean-Metric List: {[x.item() for x in mean_metrics]}")
+    kl_per_did = []
 
-    exit()
+    for did in eval_helper.get_dids_by_string("openmlcc18"):
+            
+        kl_per_did.append(calc_kl_div(results[0][did], results[1][did]))
 
-    header = ["did"] + EVALUATION_METHODS
+    
+    print(f"KL-Divergence Overall: {sum(kl_per_did) / len(kl_per_did)}")
 
-    result_arr = []
-
-    # Calc Mean and Confidence Intervals
-    for method in EVALUATION_METHODS:
-        split_means = []
-
-        for split in range(len(SPLIT_NUMBERS)):
-            vals = result_dict[method].values()
-            split_errs = [x[split] for x in vals]
-            split_means.append(sum(split_errs) / len(split_errs))
-
-        print(f"{method} Stats: ")
-        print(f"Split Means: {split_means}")
-        print(f"Mean Overall: {sum(split_means) / len(split_means)}")
-        print(f"MOE: {calc_moe(split_means)}")
-
-
-    keys = list(result_dict[list(result_dict.keys())[0]].keys())
-
-    for key in keys:
-        to_add = [key]
-
-        for method in EVALUATION_METHODS: 
-            res = result_dict[method][key]
-            to_add.append(sum(res) / len(res))
-
-        result_arr.append(to_add)
-
-    df_out = pd.DataFrame(result_arr, columns=header)
-
-    df_out.to_csv(RESULT_CSV_SAVE_DIR)
 
     print("worked")
