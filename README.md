@@ -41,3 +41,7 @@ The results_csvs folder contains output files in a CSV format that lists the out
 
 Note: Most but not all results from the thesis are in this folder because some were observed via console output.
 
+## Pretrained Models
+
+Pretrained models cannot be provided in this repository because of GitHub size restrictions on files.   
+To reproduce the results, you can train from scratch or contact the author to access the models.
