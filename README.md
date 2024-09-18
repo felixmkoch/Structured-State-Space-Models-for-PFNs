@@ -2,7 +2,8 @@
 
 Source code to reproduce the results from the Master's Thesis _Structured State Space Models for Prior-Fitted Data Networks_.
 
-This repository is built on the code of [TabPFN](https://github.com/automl/TabPFN). Many files and structures originate from their repository and are adapted for Structured State-Space Models.
+This repository is built on the code of [TabPFN](https://github.com/automl/TabPFN).   
+Many files and structures originate from their repository and are adapted for Structured State-Space Models.
 
 Other Dependencies used:
 
@@ -28,7 +29,7 @@ A Dockerfile is provided with a setup.sh file in the root repository to build an
 For training a custom Prior-Data fitted Network, it is recommended to choose either a Transformer, Mamba, or Hydra as a Backbone. Each model can be trained with the train_custom_model.py script.
 S4 and Mamba2 were also tested but did not work properly and therefore have a separate Python script to launch.
 
-**Evaluation**
+**Evaluation**  
 In the thesis, several evaluation steps were taken to better grasp the behavior of SSMs for PFNs on tabular data. Some have separate scripts to it:
 
 - bptt_eval_script: Investigate the input sequence extrapolation performance (Chapter 5.3)
