@@ -1,9 +1,0 @@
-
-[PY_EXPERIMENTER]
-provider = sqlite 
-database = mamba_compare_results
-table = mamba_compare 
-
-keyfields = max_time:DECIMAL, method:VARCHAR(255), selector:VARCHAR(255), split_number:DECIMAL
-resultfields = y:DECIMAL
-resultfields.timestamps = false
