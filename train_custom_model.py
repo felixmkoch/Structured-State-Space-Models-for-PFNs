@@ -68,18 +68,18 @@ config["num_features_used"] = uniform_int_sampler_f(1, max_features)
 #                                          CUSTOM
 #------------------------------------------------------------------------------------------------
 
-model_type = "mamba"
+model_type = "transformer"
 
 config['batch_size'] = 64 
-config['emsize'] = 128 
-config["epochs"] = 2
-config["bptt"] = 25
+config['emsize'] = 512 
+config["epochs"] = 200
+config["bptt"] = 1024
 
-config["num_steps"] = 66
+config["num_steps"] = 1024
 
-config["nlayers"] = 16
+config["nlayers"] = 12
 config["enable_autocast"] = True
-config["enable_transformer_full_attn"] = False
+config["enable_transformer_full_attn"] = True
 config["permutation_repeat"] = 0
 
 device = "cuda:0"
@@ -133,7 +133,7 @@ mamba_model = get_model(config,
 # Save Mamba Model
 save_model(mamba_model[2], 
            base_path, 
-           f'tabpfn/models_diff/mamba_small.cpkt',
+           f'tabpfn/models_diff/transformer_full_attn.cpkt',
            config
            )
 
