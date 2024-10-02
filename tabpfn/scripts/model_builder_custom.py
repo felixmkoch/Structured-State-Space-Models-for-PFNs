@@ -60,7 +60,8 @@ def load_model_only_inference(path, filename, device, model_name=""):
             config_sample['nlayers'], 
             y_encoder=y_encoder_generator(1, config_sample['emsize']),
             dropout=config_sample['dropout'],
-            efficient_eval_masking=config_sample['efficient_eval_masking']
+            efficient_eval_masking=config_sample['efficient_eval_masking'],
+            full_attention=config_sample.get('enable_transformer_full_attn', False)
             )
     elif model_name == "mamba":
         model = MambaModel(
@@ -224,7 +225,7 @@ def get_model(config,
     #------------------------------------------------------------------------------------------------
 
     import tabpfn.priors as priors
-    from tabpfn.train import train, Losses
+    from tabpfn.train import Losses
     from tabpfn.custom_train import train
     extra_kwargs = {}
     verbose_train, verbose_prior = verbose >= 1, verbose >= 2
@@ -373,6 +374,7 @@ def get_model(config,
                   , enable_data_parallel=enable_data_parallel
                   , weight_decay=config.get('weight_decay', 0.0)
                   , config=config
+                  , transformer_full_attn = config.get("enable_transformer_full_attn", False)
                   , model_type=model_type
             )
 

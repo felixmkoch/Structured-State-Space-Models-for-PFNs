@@ -114,7 +114,8 @@ def train(priordataloader_class,
           permutation_repeat=0,
           enable_data_parallel=False,
           config={},
-          model_type="",    # mamba/transformer
+          model_type="",    # mamba/transformer/hydra
+          transformer_full_attn = False,
           **model_extra_args
           ):
     device = gpu_device if torch.cuda.is_available() else 'cpu:0'
@@ -157,6 +158,7 @@ def train(priordataloader_class,
                                 decoder=decoder, 
                                 init_method=initializer, 
                                 efficient_eval_masking=efficient_eval_masking, 
+                                full_attention=transformer_full_attn
                                 **model_extra_args
                                 )
     elif model_type == "mamba":

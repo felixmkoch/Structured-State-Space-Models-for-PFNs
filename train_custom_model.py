@@ -79,6 +79,7 @@ config["num_steps"] = 66
 
 config["nlayers"] = 16
 config["enable_autocast"] = True
+config["enable_transformer_full_attn"] = False
 config["permutation_repeat"] = 0
 
 device = "cuda:0"
