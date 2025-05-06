@@ -21,10 +21,10 @@ EVALUATION_TYPE = "openmlcc18"
 EVALUATION_TYPE_FILTERS = {
     "categorical": True,
     "nans": True,
-    "multiclass": False
+    "multiclass": True
 }
 
-EVALUATION_METHODS = ["hydra"]
+EVALUATION_METHODS = ["hydra", "transformer"]
 
 METRIC_USED = tabular_metrics.auc_metric
 
@@ -36,14 +36,17 @@ HYDRA_MODEL_NAME = "tabpfn/models_diff/hydra_small.cpkt"
 
 SPLIT_NUMBERS = [1, 2, 3, 4, 5]
 
-bptt_here = 1000
+bptt_here = 10000
+# Relevant for the AutoML approaches
 max_time = 3600
 CONFIDENCE_LEVEL = 0.95
 
 JRT_PROMPT = False
 SINGLE_EVAL_PROMPT = False
-PERMUTATION_BAGGING = 20
-SAMPLE_BAGGING = 10
+# Default 1, number of permutations that will be averaged.
+PERMUTATION_BAGGING = 1
+# Default 0. Number of bootstrap samples to be bagged.
+SAMPLE_BAGGING = 0
 
 device = "cuda:0"
 
