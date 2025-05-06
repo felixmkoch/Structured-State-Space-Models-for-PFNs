@@ -12,29 +12,14 @@ apt install python3.7 -y
 apt install vim
 
 # Pip PyTorch compatible with CUDA
-pip install torch==1.13.0+cu116 torchvision==0.14.0+cu116 torchaudio==0.13.0 --extra-index-url https://download.pytorch.org/whl/cu116
-
-# Mamba install
-pip install --upgrade pip
-pip install packaging
-mkdir tmp
-cd tmp
-git clone https://github.com/Dao-AILab/causal-conv1d.git
-cd causal-conv1d
-git checkout v1.4.0
-CAUSAL_CONV1D_FORCE_BUILD=TRUE pip install .
-cd ..
-git clone https://github.com/state-spaces/mamba.git
-cd mamba
-git checkout v1.1.1 # current latest version tag
-MAMBA_FORCE_BUILD=TRUE pip install .
-cd ..
-cd ..
-rm -rf tmp
+#pip install torch==1.13.0+cu116 torchvision==0.14.0+cu116 torchaudio==0.13.0 --extra-index-url https://download.pytorch.org/whl/cu116
+pip install torch==2.0.0 torchvision==0.15.1 torchaudio==2.0.1 --index-url https://download.pytorch.org/whl/cu118
 
 # TabPFN Installations
 pip install -r requirements.txt
 
-pip install py_experimenter==1.1.0
-
 pip install wandb
+
+pip install causal-conv1d>=1.4.0
+
+pip install mamba-ssm

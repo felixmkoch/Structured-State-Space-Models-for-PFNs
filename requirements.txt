@@ -12,4 +12,5 @@ catboost==0.26.1
 # auto-sklearn==0.14.5
 hyperopt==0.2.5
 configspace==0.4.21
+lightgbm==4.6.0
 # autogluon==0.4.0
