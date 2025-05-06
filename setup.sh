@@ -5,11 +5,8 @@ apt update
 apt upgrade -y
 apt install git -y
 apt install pip -y
-apt-get install software-properties-common -y
-add-apt-repository ppa:deadsnakes/ppa -y
 apt update
-apt install python3.7 -y
-apt install vim
+apt install vim -y
 
 # Pip PyTorch compatible with CUDA
 #pip install torch==1.13.0+cu116 torchvision==0.14.0+cu116 torchaudio==0.13.0 --extra-index-url https://download.pytorch.org/whl/cu116
