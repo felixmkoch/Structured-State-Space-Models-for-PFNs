@@ -6,7 +6,7 @@ wandb_project = "mamba_project"
 wandb_job_type = "download_mamba_model"
 wandb_run_name = "Download Mamba Model"
 
-MODEL_NAME = "mamba_150e"
+MODEL_NAME = "hydra_small"
 alias = "latest"
 
 model_name = f"{MODEL_NAME}:{alias}"
