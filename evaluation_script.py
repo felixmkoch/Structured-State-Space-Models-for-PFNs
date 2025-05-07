@@ -24,7 +24,7 @@ EVALUATION_TYPE_FILTERS = {
     "multiclass": True
 }
 
-EVALUATION_METHODS = ["hydra", "transformer"]
+EVALUATION_METHODS = ["hydra"]
 
 METRIC_USED = tabular_metrics.auc_metric
 
@@ -36,7 +36,7 @@ HYDRA_MODEL_NAME = "tabpfn/models_diff/hydra_small.cpkt"
 
 SPLIT_NUMBERS = [1, 2, 3, 4, 5]
 
-bptt_here = 10000
+bptt_here = 1024
 # Relevant for the AutoML approaches
 max_time = 3600
 CONFIDENCE_LEVEL = 0.95

@@ -43,7 +43,7 @@ def load_model_only_inference(path, filename, device):
     cannot be used for further training.
     """
 
-    model_state, optimizer_state, config_sample = torch.load(os.path.join(path, filename), map_location='cpu')
+    model_state, optimizer_state, config_sample = torch.load(os.path.join(path, filename), map_location='cpu', weights_only=True)
 
     if (('nan_prob_no_reason' in config_sample and config_sample['nan_prob_no_reason'] > 0.0) or
         ('nan_prob_a_reason' in config_sample and config_sample['nan_prob_a_reason'] > 0.0) or

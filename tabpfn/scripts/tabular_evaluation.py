@@ -376,31 +376,32 @@ def evaluate_position(X,
     start_time = time.time()
 
     if isinstance(model, nn.Module): # Two separate predict interfaces for transformer and baselines
+        best_configs = None
         if method_name == "transformer":
-            outputs, best_configs = transformer_predict(model, eval_xs, eval_ys, eval_position, metric_used=metric_used
+            outputs, model_inference_time = transformer_predict(model, eval_xs, eval_ys, eval_position, metric_used=metric_used
                                                             , categorical_feats=categorical_feats
                                                             , inference_mode=True
                                                             , device=device
                                                             , extend_features=True
-                                                            , **kwargs), None
+                                                            , **kwargs)
         if method_name == "mamba":
-            outputs, best_configs = mamba_predict(model, eval_xs, eval_ys, eval_position, metric_used=metric_used
+            outputs, model_inference_time = mamba_predict(model, eval_xs, eval_ys, eval_position, metric_used=metric_used
                                                             , categorical_feats=categorical_feats
                                                             , inference_mode=True
                                                             , device=device
                                                             , extend_features=True
                                                             , jrt_prompt=jrt_prompt
-                                                            , **kwargs), None
+                                                            , **kwargs)
             
         if method_name == "hydra":
-            outputs, best_configs = hydra_predict(model, eval_xs, eval_ys, eval_position, metric_used=metric_used
+            outputs, model_inference_time = hydra_predict(model, eval_xs, eval_ys, eval_position, metric_used=metric_used
                                                             , categorical_feats=categorical_feats
                                                             , inference_mode=True
                                                             , device=device
                                                             , single_evaluation_prompt = single_evaluation_prompt
                                                             , extend_features=True
                                                             , jrt_prompt=jrt_prompt
-                                                            , **kwargs), None    
+                                                            , **kwargs)   
     
     else:
         print(f"Baseline Predict method {metric_used} with {max_time} maximum time.")
@@ -422,7 +423,7 @@ def evaluate_position(X,
         outputs = outputs.cpu()
         eval_ys = eval_ys.cpu()
 
-    ds_result = None, outputs, eval_ys, best_configs, time.time() - start_time
+    ds_result = None, outputs, eval_ys, best_configs, model_inference_time
 
     # Commented out for now - don't want to save.
     #if save:

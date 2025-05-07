@@ -162,44 +162,63 @@ class EvalHelper:
                              permutation_bagging=1,
                              sample_bagging=0,
                              eval_filters={},
+                             dummy_size = (1000, 100),       # Size of the dummy tensor that should be tested if evaluation_type is dummy.
                              return_whole_output=False):
 
         '''
         Evaluation on customly settable datasets.
         '''
 
-        predefined_eval_types = ["openmlcc18", "openmlcc18_large", "test"]
+        predefined_eval_types = ["openmlcc18", "openmlcc18_large", "test", "dummy"]
 
         # Standard case: Normal eval dataset
         if evaluation_type not in predefined_eval_types: print("Using single DID in Evaluation")
 
-        # The dataset to iterate over
-        ds = None
-        if evaluation_type == "openmlcc18": ds = self.openml_cc18_dids_small
-
-        if evaluation_type == "openmlcc18_large": ds = self.openml_cc18_dids_large
-
-        if evaluation_type == "test": ds = self.test_dids_classification
-
-        if evaluation_type not in predefined_eval_types: ds = [evaluation_type]
-            
-        self.check_datasets_data(ds)
-
-        self.make_limit_datasets(max_classes, max_features, ds, eval_filters)
-
-        print("Evaluating custom dataset ... ")
+        if evaluation_type == "dummy": print("Doing dummy evaluation")
 
         result = {}
 
-        for did in self.limit_dict.keys():
-            result[did] = []
-            for split_number in split_numbers:
-                if return_whole_output:
-                    result[did].append(evaluate(self.limit_dict[did], bptt, eval_positions, metric, model, device, method_name=method_name, max_time=max_time, split_number=split_number, jrt_prompt=jrt_prompt, random_premutation=permutation_random, single_evaluation_prompt=single_evaluation_prompt, permutation_bagging=permutation_bagging, sample_bagging=sample_bagging))
-                else:
-                    result[did].append(evaluate(self.limit_dict[did], bptt, eval_positions, metric, model, device, method_name=method_name, max_time=max_time, split_number=split_number, jrt_prompt=jrt_prompt, random_premutation=permutation_random, single_evaluation_prompt=single_evaluation_prompt, permutation_bagging=permutation_bagging, sample_bagging=sample_bagging)["mean_metric"].item())
+        # The dataset to iterate over
+        ds = None
+        if evaluation_type != "dummy":
+            if evaluation_type == "openmlcc18": ds = self.openml_cc18_dids_small
+
+            if evaluation_type == "openmlcc18_large": ds = self.openml_cc18_dids_large
+
+            if evaluation_type == "test": ds = self.test_dids_classification
+
+            if evaluation_type not in predefined_eval_types: ds = [evaluation_type]
                 
+            self.check_datasets_data(ds)
+
+            self.make_limit_datasets(max_classes, max_features, ds, eval_filters)
+
+            for did in self.limit_dict.keys():
+                result[did] = []
+                for split_number in split_numbers:
+                    if return_whole_output:
+                        result[did].append(evaluate(self.limit_dict[did], bptt, eval_positions, metric, model, device, method_name=method_name, max_time=max_time, split_number=split_number, jrt_prompt=jrt_prompt, random_premutation=permutation_random, single_evaluation_prompt=single_evaluation_prompt, permutation_bagging=permutation_bagging, sample_bagging=sample_bagging))
+                    else:
+                        result[did].append(evaluate(self.limit_dict[did], bptt, eval_positions, metric, model, device, method_name=method_name, max_time=max_time, split_number=split_number, jrt_prompt=jrt_prompt, random_premutation=permutation_random, single_evaluation_prompt=single_evaluation_prompt, permutation_bagging=permutation_bagging, sample_bagging=sample_bagging)["mean_metric"].item())
+
+        else:       # Here dummy evaluation.
+
+            dummy_dataset = [self._get_dummy_dataset(dummy_size=dummy_size)]
+
+            result["dummy"] = []
+
+            result["dummy"].append(evaluate(dummy_dataset, bptt, eval_positions, metric, model, device, method_name=method_name, max_time=max_time, split_number=1, jrt_prompt=jrt_prompt, random_premutation=False, single_evaluation_prompt=single_evaluation_prompt, permutation_bagging=permutation_bagging, sample_bagging=sample_bagging))
+
         return result
+
+
+    def _get_dummy_dataset(self, dummy_size=(999, 99)):
+
+        dummy_x = torch.rand(dummy_size[0], dummy_size[1])
+
+        dummy_y = torch.randint(0, 2, (dummy_size[0],))     # Dummy y values between 0 and 9.
+
+        return ["dummy_set", dummy_x, dummy_y, [], None, None]      # This is what a "normal" OpenML dataset would look like in the code structure above.
     
 
     def get_dids_by_string(self, s):

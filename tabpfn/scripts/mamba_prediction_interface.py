@@ -565,6 +565,7 @@ def mamba_predict(model, eval_xs, eval_ys, eval_position,
                     output_batch = checkpoint(predict, batch_input, batch_label, style_, softmax_temperature_, True, use_reentrant=False)
         outputs += [output_batch]
     #print('MODEL INFERENCE TIME ('+str(batch_input.device)+' vs '+device+', '+str(fp16_inference)+')', str(time.time()-start))
+    model_inference_time = time.time()-start
 
     outputs = torch.cat(outputs, 1)
     for i, ensemble_configuration in enumerate(ensemble_configurations):
@@ -586,7 +587,7 @@ def mamba_predict(model, eval_xs, eval_ys, eval_position,
 
     output = torch.transpose(output, 0, 1)
 
-    return output
+    return output, model_inference_time
 
 def get_params_from_config(c):
     return {'max_features': c['num_features']
