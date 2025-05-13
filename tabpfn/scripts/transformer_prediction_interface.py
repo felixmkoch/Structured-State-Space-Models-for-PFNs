@@ -550,7 +550,7 @@ def transformer_predict(model, eval_xs, eval_ys, eval_position,
             if device == 'cpu':
                 output_batch = checkpoint(predict, batch_input, batch_label, style_, softmax_temperature_, True, use_reentrant=False)
             else:
-                with torch.cuda.amp.autocast(enabled=fp16_inference):
+                with torch.amp.autocast("cuda", enabled=fp16_inference):
                     output_batch = checkpoint(predict, batch_input, batch_label, style_, softmax_temperature_, True, use_reentrant=False)
         outputs += [output_batch]
 
