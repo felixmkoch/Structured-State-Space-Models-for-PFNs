@@ -26,16 +26,16 @@ EVALUATION_TYPE_FILTERS = {
 }
 
 # Only one method here
-EVALUATION_METHODS = ["transformer", "mamba", "hydra"]
+EVALUATION_METHODS = ["mamba"]
 
-METRICS_USED = [tabular_metrics.accuracy_metric, tabular_metrics.auc_metric]
+METRICS_USED = [tabular_metrics.accuracy_metric]#, tabular_metrics.auc_metric]
 METRIC_TO_STR = {
-    tabular_metrics.accuracy_metric: "Acc",
-    tabular_metrics.auc_metric: "AUC"
+    tabular_metrics.accuracy_metric: "acc",
+    tabular_metrics.auc_metric: "auc"
 }
 
 
-RESULT_CSV_SAVE_DIR = os.path.join("result_csvs", "table")
+RESULT_CSV_SAVE_DIR = os.path.join("result_csvs", "bars_acc")
 RESULT_CSV_PREFIX = ""
 
 MAMBA_MODEL_NAME = "tabpfn/models_diff/mamba_small.cpkt"
@@ -53,7 +53,7 @@ max_time = 3600
 JRT_PROMPT = False
 SINGLE_EVAL_PROMPT = False
 # Default 1, number of permutations that will be averaged.
-PERMUTATION_BAGGING = 1
+PERMUTATION_BAGGING = 8
 # Default 0. Number of bootstrap samples to be bagged.
 SAMPLE_BAGGING = 0
 
@@ -153,13 +153,11 @@ if __name__ == "__main__":
 
         metric_str = METRIC_TO_STR[metric_used]
 
-        # Calc Mean and Confidence Intervals
-
         for evaluation_method in EVALUATION_METHODS:
 
             res_dict_method = result_dict[evaluation_method]
 
-            csv_name = f"{RESULT_CSV_PREFIX}{evaluation_method}_{metric_used}.csv"
+            csv_name = f"{RESULT_CSV_PREFIX}{evaluation_method}_{metric_str}_{PERMUTATION_BAGGING}_{NUM_SPLITS}.csv"
 
             output_path = os.path.join(RESULT_CSV_SAVE_DIR, csv_name)
 
