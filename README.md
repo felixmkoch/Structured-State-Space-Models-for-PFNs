@@ -2,46 +2,41 @@
 
 Source code to reproduce the results from the Master's Thesis _Structured State Space Models for Prior-Fitted Data Networks_.
 
-This repository is built on the code of [TabPFN](https://github.com/automl/TabPFN).   
-Many files and structures originate from their repository and are adapted for Structured State-Space Models.
+This repository is built on the code of [TabPFN](https://github.com/automl/TabPFN).
 
 Other Dependencies used:
 
-- S4: https://github.com/state-spaces/s4
 - Mamba (1 and 2): https://github.com/state-spaces/mamba
 - Hydra: https://github.com/goombalab/hydra
 
 ## Getting Started
 
-To launch experiments, the following requirements need to be fulfilled:
+A Dockerfile is provided with a setup.sh file in the root repository to build an Ubuntu-based Docker container with all dependencies. This container exceeds 5GB, so the whole setup takes time.
 
-1. CUDA >= 11.8
-2. Python 3.10
-3. Dependencies from the requirements.txt
-4. PyTorch >= 2.0.0 with CUDA support
+To launch the experiments, we used the following combination of dependencies:
+
+- python == 3.8.10
+- CUDA == 11.8
+- torch == 2.2.0
 
 Other versions from external dependencies may also be supported but were not tested properly.
-
-A Dockerfile is provided with a setup.sh file in the root repository to build an Ubuntu-based Docker container with all dependencies. This container exceeds 5GB, so the whole setup takes time.
 
 ## Files for Training and Evaluation
 
 For training a custom Prior-Data fitted Network, it is recommended to choose either a Transformer, Mamba, or Hydra as a Backbone. Each model can be trained with the train_custom_model.py script.
-S4 and Mamba2 were also tested but did not work properly and therefore have a separate Python script to launch.
 
 **Evaluation**  
-In the thesis, several evaluation steps were taken to better grasp the behavior of SSMs for PFNs on tabular data. Some have separate scripts to it:
 
-- bptt_eval_script: Investigate the input sequence extrapolation performance (Chapter 5.3)
-- evaluation_script: Evaluation for all the other result chapters.
+We used the following three scripts for evaluation:
 
-## Results
+- evaluation_script.py
+- permutation_eval_script.py
+- whole_output_evaluation.py
 
-The results_csvs folder contains output files in a CSV format that lists the output of evaluations conducted on different models. Data from tables can be found there.
+For training, just use train_custom_model.py
 
-Note: Most but not all results from the thesis are in this folder because some were observed via console output.
+## License
 
-## Pretrained Models
+Most parts of this work are licensed under the MIT license if not stated otherwise.  
 
-Pretrained models cannot be provided in this repository because of GitHub size restrictions on files.   
-To reproduce the results, you can train from scratch or contact the author to access the models.
+Files in the tabpfn/ folder except those regarding mamba or hydra are under the license of [TabPFN](https://github.com/automl/TabPFN)
