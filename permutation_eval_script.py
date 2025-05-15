@@ -16,41 +16,58 @@ import pandas as pd
 #EVALUATION_TYPE = "openmlcc18_large"
 EVALUATION_TYPE = "openmlcc18"
 
-NUM_RANDOM_PERMUTATIONS = 2
+#
+# Here: True means to keep them, false to omit
+#
+EVALUATION_TYPE_FILTERS = {
+    "categorical": True,
+    "nans": True,
+    "multiclass": True
+}
 
-EVALUATION_METHOD = "mamba"
+openml_cc18_small_dids = [11, 14, 15, 16, 18, 22, 23, 29, 31, 37, 50, 54, 188, 458, 469, 1049, 1050, 1063, 1068, 1462, 1464, 1480, 1494, 1510, 6332, 23381, 40966, 40975, 40982, 40994]
 
-METRIC_USED = tabular_metrics.auc_metric
+EVALUATION_METHODS = ["transformer"]
 
-RESULT_CSV_SAVE_DIR = os.path.join("result_csvs", "permutation_eval_res.csv")
+metrics_dict = {
+    "acc": tabular_metrics.accuracy_metric,
+    "auc": tabular_metrics.auc_metric
+}
+
+METRICS_USED = ["acc"]
+
+RESULT_CSV_SAVE_DIR = os.path.join("result_csvs", "perm_bars")
+
+RESULT_CSV_PREFIX = ""
 
 MAMBA_MODEL_NAME = "tabpfn/models_diff/mamba_small.cpkt"
 TRANSFORMER_MODEL_NAME = "tabpfn/models_diff/tabpfn_transformer_model.cpkt"
 HYDRA_MODEL_NAME = "tabpfn/models_diff/hydra_small.cpkt"
 
 # Only use one element in the list please
-SPLIT_NUMBERS = [1]
-max_time = 3600
+NUM_SPLITS = 2
+SPLIT_NUMBERS = [i+1 for i in range(NUM_SPLITS)]
 
-JRT_PROMPT = True
+JRT_PROMPT = False
+SINGLE_EVAL_PROMPT = False
 
-bptt_here = 1000
+bptt_here = 1024
 
 device = "cuda:0"
 
-PERMUTATION_BAGGING = 20
-SAMPLE_BAGGING = 1024
+PERMUTATION_BAGGINGS = [2]
+SAMPLE_BAGGING = 0
 
 eval_helper = EvalHelper()
 
-def do_permutation_evaluation(eval_method, random_premutation=True):
+def do_evaluation(eval_list, metric, permutation_bagging):
 
     result_dict = {}
 
     #
     # MAMBA EVALUATION
     #
-    if "mamba" == eval_method:
+    if "mamba" in eval_list:
         # Load Mamba Model (Yes this is a bit scuffed).
         m_model, mamba_config, results_file = mamba_load_model_workflow(2, -1, add_name="", base_path="", device=device,eval_addition='', 
                                                     only_inference=True, model_path_custom=MAMBA_MODEL_NAME)
@@ -59,29 +76,14 @@ def do_permutation_evaluation(eval_method, random_premutation=True):
         mamba_model = m_model[2]
 
         # Key is the dataset id (did) and value the mean error on it.
-        result_dict["mamba"] = eval_helper.do_evaluation_custom(mamba_model, bptt=bptt_here, eval_positions=mamba_config["eval_positions"], metric=METRIC_USED, device=device, method_name="mamba",
-                                        evaluation_type=EVALUATION_TYPE, split_numbers=SPLIT_NUMBERS, jrt_prompt=JRT_PROMPT, permutation_random=random_premutation, permutation_bagging=PERMUTATION_BAGGING, sample_bagging=SAMPLE_BAGGING, return_whole_output=True)
-
-    #
-    # TRANSFORMER EVALUATION
-    #
-    if "transformer" == eval_method:
-        # Load Transformer Model (Yes this is a bit scuffed).
-        t_model, transformer_config, results_file = transformer_load_model_workflow(2, -1, add_name="", base_path="", device=device,eval_addition='', 
-                                                    only_inference=True, model_path_custom=TRANSFORMER_MODEL_NAME)
-
-        # That's the real transformer model here.
-        transformer_model = t_model[2]
-
-        # Key is the dataset id (did) and value the mean error on it.
-        result_dict["transformer"] = eval_helper.do_evaluation_custom(transformer_model, bptt=bptt_here, eval_positions=transformer_config["eval_positions"], metric=METRIC_USED, device=device, method_name="transformer",
-                                        evaluation_type=EVALUATION_TYPE, split_numbers=SPLIT_NUMBERS, jrt_prompt=JRT_PROMPT, permutation_random=random_premutation, return_whole_output=True)
-
+        result_dict["mamba"] = eval_helper.do_evaluation_custom(mamba_model, bptt=bptt_here, 
+                                        eval_positions=mamba_config["eval_positions"], metric=metric, device=device, method_name="mamba", permutation_random=True,
+                                        evaluation_type=EVALUATION_TYPE, split_numbers=SPLIT_NUMBERS, jrt_prompt=JRT_PROMPT, permutation_bagging=permutation_bagging, sample_bagging=SAMPLE_BAGGING, eval_filters=EVALUATION_TYPE_FILTERS, return_whole_output=True)
 
     #
     # HYDRA EVALUATION
     #
-    if "hydra" == eval_method:
+    if "hydra" in eval_list:
         # Load Transformer Model (Yes this is a bit scuffed).
         h_model, hydra_config, results_file = hydra_load_model_workflow(2, -1, add_name="", base_path="", device=device,eval_addition='', 
                                                     only_inference=True, model_path_custom=HYDRA_MODEL_NAME)
@@ -90,34 +92,26 @@ def do_permutation_evaluation(eval_method, random_premutation=True):
         hydra_model = h_model[2]
 
         # Key is the dataset id (did) and value the mean error on it.
-        result_dict["hydra"] = eval_helper.do_evaluation_custom(hydra_model, bptt=bptt_here, eval_positions=hydra_config["eval_positions"], metric=METRIC_USED, device=device, method_name="hydra",
-                                        evaluation_type=EVALUATION_TYPE, split_numbers=SPLIT_NUMBERS, jrt_prompt=JRT_PROMPT, permutation_random=random_premutation, permutation_bagging=PERMUTATION_BAGGING, sample_bagging=SAMPLE_BAGGING, return_whole_output=True)
+        result_dict["hydra"] = eval_helper.do_evaluation_custom(hydra_model, bptt=bptt_here, 
+                                        eval_positions=hydra_config["eval_positions"], metric=metric, device=device, method_name="hydra", permutation_random=True,
+                                        evaluation_type=EVALUATION_TYPE, split_numbers=SPLIT_NUMBERS, jrt_prompt=JRT_PROMPT, single_evaluation_prompt=SINGLE_EVAL_PROMPT, permutation_bagging=permutation_bagging , sample_bagging=SAMPLE_BAGGING, eval_filters=EVALUATION_TYPE_FILTERS, return_whole_output=True)
 
 
     #
-    # XGBoost Evaluation
+    # TRANSFORMER EVALUATION
     #
-    if "xgboost" == eval_method:
-        # That's the xgboost metric function serving as a model
-        xgboost_model = xgb_metric
+    if "transformer" in eval_list:
+        # Load Transformer Model (Yes this is a bit scuffed).
+        t_model, transformer_config, results_file = transformer_load_model_workflow(2, -1, add_name="", base_path="", device=device,eval_addition='', 
+                                                    only_inference=True, model_path_custom=TRANSFORMER_MODEL_NAME)
 
-        # Key is the dataset id (did) and value the mean error on it. We use mamba model params as bptt and eval_positions
-        # NOTE: Current max time is 300, aka 5 minutes. Need to change this maybe.
-        result_dict["xgboost"] = eval_helper.do_evaluation_custom(xgboost_model, bptt=bptt_here, eval_positions=mamba_config["eval_positions"], metric=METRIC_USED, device=device, method_name="xgb",
-                                        evaluation_type=EVALUATION_TYPE, max_time=max_time, permutation_random=random_premutation, return_whole_output=True)
+        # That's the real transformer model here.
+        transformer_model = t_model[2]
 
-
-    #
-    # KNN Evaluation
-    #
-    if "knn" == eval_method:
-        # That's the k-nearest-neighbor metric function serving as a model
-        knn_model = knn_metric
-
-        # Key is the dataset id (did) and value the mean error on it. We use mamba model params as bptt and eval_positions
-        result_dict["knn"] = eval_helper.do_evaluation_custom(knn_model, bptt=bptt_here, eval_positions=mamba_config["eval_positions"], metric=METRIC_USED, device=device, method_name="knn",
-                                        evaluation_type=EVALUATION_TYPE, max_time=max_time, permutation_random=random_premutation, return_whole_output=True)
-    
+        # Key is the dataset id (did) and value the mean error on it.
+        result_dict["transformer"] = eval_helper.do_evaluation_custom(transformer_model, bptt=bptt_here, 
+                                        eval_positions=transformer_config["eval_positions"], metric=metric, device=device, method_name="transformer", permutation_random=True,
+                                        evaluation_type=EVALUATION_TYPE, split_numbers=SPLIT_NUMBERS, jrt_prompt=JRT_PROMPT, single_evaluation_prompt=SINGLE_EVAL_PROMPT, permutation_bagging=permutation_bagging , sample_bagging=SAMPLE_BAGGING, eval_filters=EVALUATION_TYPE_FILTERS, return_whole_output=True)
 
     return result_dict
 
@@ -135,32 +129,35 @@ def calc_kl_div(p, q):
 
 if __name__ == "__main__":
 
-    results = []
-    mean_metrics = []
+    header = ["did"] + [str(i) for i in SPLIT_NUMBERS]
 
-    for i in range(NUM_RANDOM_PERMUTATIONS):
-        # output is method_dict -> did -> split_number -> output_dict
-        outputs = do_permutation_evaluation(EVALUATION_METHOD, random_premutation=True)
+    for permutation_bagging in PERMUTATION_BAGGINGS:
+        
+        for metric_used in METRICS_USED:
 
-        last_outputs = {}
-        mean_metric = {}
+            metric = metrics_dict[metric_used]
 
-        for did in eval_helper.get_dids_by_string("openmlcc18"):
-            last_outputs[did] = outputs[EVALUATION_METHOD][did][0]["last_outputs"]
-            mean_metric[did] = outputs[EVALUATION_METHOD][did][0]["mean_metric"]
+            result_dict = do_evaluation(EVALUATION_METHODS, metric, permutation_bagging)
+            result_dict2 = do_evaluation(EVALUATION_METHODS, metric, permutation_bagging)
 
-        mean_metrics.append(mean_metric)
-        results.append(last_outputs)
+            for evaluation_method in EVALUATION_METHODS:
 
+                res_dict_method = result_dict[evaluation_method]
+                res_dict_method2 = result_dict2[evaluation_method]
 
-    kl_per_did = []
+                csv_name = f"{RESULT_CSV_PREFIX}{evaluation_method}_{metric_used}_pb_{permutation_bagging}.csv"
 
-    for did in eval_helper.get_dids_by_string("openmlcc18"):
-            
-        kl_per_did.append(calc_kl_div(results[0][did], results[1][did]))
+                output_path = os.path.join(RESULT_CSV_SAVE_DIR, csv_name)
+                
+                to_print = []
 
-    
-    print(f"KL-Divergence Overall: {sum(kl_per_did) / len(kl_per_did)}")
+                for did in eval_helper.get_dids_by_string("openmlcc18"):
+
+                    to_print.append([did] + [calc_kl_div(res_dict_method[did][k]["last_outputs"], res_dict_method2[did][k]["last_outputs"]) for k in range(NUM_SPLITS)])
+                    
+                df_out = pd.DataFrame(to_print, columns=header)
+
+                df_out.to_csv(output_path, index=False)
 
 
     print("worked")
