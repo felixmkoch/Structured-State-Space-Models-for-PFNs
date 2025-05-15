@@ -1,7 +1,5 @@
 ## Structured State Space Models for Prior-Fitted Data Networks
 
-Source code to reproduce the results from the Master's Thesis _Structured State Space Models for Prior-Fitted Data Networks_.
-
 This repository is built on the code of [TabPFN](https://github.com/automl/TabPFN).
 
 Other Dependencies used:
