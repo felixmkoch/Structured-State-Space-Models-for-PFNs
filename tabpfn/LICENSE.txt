@@ -1,4 +1,11 @@
-The following license applies to all contents in this folder that do not refer to "mamba", "mamba2", or "hydra".
+The license below applies to the folder here. The following modifications were done:
+
+   - custom_train.py was added and modified as a copy of train.py
+   - mamba.py and hydra.py were added
+   - models_diff/tabpfn_transformer_model.cpkt is a customly trained transformer based on TabPFN
+   - scripts/ : Files containing "mamba", "hydra" or "custom" were added and modified based on existing files
+   - tabular_baselines.py and tabular_metrics.py were modified slightly with functions for Mamba and hydra
+   - tabular_evaluation.py was extended with functions for context permutation
 
                               Prior Labs License
                            Version 1.0, January 2025

@@ -1,8 +1,6 @@
-This project is licensed under the MIT License with hydra/ and tabpfn/ as two exceptions. The corresponding licenses can be found in the sub-folders.
-
 MIT License
 
-Copyright (c) 2025 Felix Koch
+Copyright (c) 2025 goombalab
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
