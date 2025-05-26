@@ -18,7 +18,7 @@ import tabpfn.priors as priors
 import tabpfn.encoders as encoders
 import tabpfn.positional_encodings as positional_encodings
 from tabpfn.utils import init_dist
-from torch.cuda.amp import autocast, GradScaler
+from torch.amp import autocast, GradScaler
 from torch import nn
 import wandb
 from tabpfn.mamba import MambaModel
@@ -233,7 +233,7 @@ def train(priordataloader_class,
     optimizer = torch.optim.AdamW(model.parameters(), lr=lr, weight_decay=weight_decay)
     scheduler = scheduler(optimizer, warmup_epochs, epochs if epochs is not None else 100) # when training for fixed time lr schedule takes 100 steps
 
-    scaler = GradScaler() if train_mixed_precision else None
+    scaler = GradScaler("cuda") if train_mixed_precision else None
 
     # check that everything uses up-to-date APIs
     utils.check_compatibility(dl)
@@ -276,7 +276,7 @@ def train(priordataloader_class,
                     else:
                         single_eval_pos = targets.shape[0] - bptt_extra_samples
 
-                    with autocast(enabled=scaler is not None):
+                    with autocast("cuda", enabled=scaler is not None):
                         # If style is set to None, it should not be transferred to device
                         output = model(
                             tuple(
