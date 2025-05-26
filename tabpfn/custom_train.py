@@ -42,16 +42,21 @@ def sample_train(x, y, eval_position, bag_size):
     gen_seed = rng.randint(1e7)
     generator.manual_seed(gen_seed)
 
-    first_part_x = x[:eval_position]
+    first_part_x1 = x[1][:eval_position]
+    first_part_x2 = x[2][:eval_position]
     first_part_y = y[:eval_position]
 
     indices = torch.randint(0, eval_position, (bag_size,), generator=generator)
 
-    x_first_sampled = first_part_x[indices]
+    x1_first_sampled = first_part_x1[indices]
+    x2_first_sampled = first_part_x2[indices]
     y_first_sampled = first_part_y[indices]
 
-    data_return = torch.cat((x_first_sampled, x[eval_position:]), dim=0)
+    x1_return = torch.cat((x1_first_sampled, x[1][eval_position:]), dim=0)
+    x2_return = torch.cat((x2_first_sampled, x[2][eval_position:]), dim=0)
     targets_return = torch.cat((y_first_sampled, y[eval_position:]), dim=0)
+
+    data_return = (None, x1_return, x2_return)
 
     return data_return, targets_return
 
@@ -64,9 +69,6 @@ def permute_data(data, targets, eval_position, device="cuda:0"):
     rng = np.random.RandomState()
     gen_seed = rng.randint(1e7)
     generator.manual_seed(gen_seed)
-
-    # NOTE: This is a quick fix until multi-GPU support is there.
-    to_device_tmp = "cuda:1"
 
     # Onto the other device
     data[1] = data[1].to(device)
@@ -254,7 +256,7 @@ def train(priordataloader_class,
 
                     print(f"Bootstrap samples to a context of length {bootstrap_samples}.")
 
-                    eval_xs, eval_ys = sample_train(data, targets, single_eval_pos, bootstrap_samples)
+                    data, targets = sample_train(data, targets, single_eval_pos, bootstrap_samples)
                     single_eval_pos = bootstrap_samples
 
                 targets_original = targets

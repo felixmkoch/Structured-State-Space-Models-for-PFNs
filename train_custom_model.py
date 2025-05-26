@@ -68,7 +68,7 @@ config["num_features_used"] = uniform_int_sampler_f(1, max_features)
 #                                          CUSTOM
 #------------------------------------------------------------------------------------------------
 
-model_type = "transformer"
+model_type = "mamba"
 
 config['batch_size'] = 64 
 config['emsize'] = 512 
@@ -79,7 +79,7 @@ config["num_steps"] = 1024
 
 config["nlayers"] = 12
 config["enable_autocast"] = True
-config["enable_transformer_full_attn"] = True
+config["enable_transformer_full_attn"] = False
 config["bootstrap_samples"] = 4096          # Default would be 0. 
 config["permutation_repeat"] = 0
 
