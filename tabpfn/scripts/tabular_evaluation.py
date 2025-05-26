@@ -126,9 +126,11 @@ def evaluate(datasets, bptt, eval_positions, metric_used, model, device='cpu'
             ys = None
             for bag_num in range(permutation_bagging):
 
-                if bag_num > 0 and permutation_bagging > 1: random_premutation = True
+                if bag_num > 0 and permutation_bagging > 1: 
+                    random_premutation = True
 
-                if sample_bagging and sample_bagging > 0: random_premutation = False
+                if sample_bagging and sample_bagging > 0: 
+                    random_premutation = False
 
                 eval_position_real = int(dataset_bptt * 0.5) if 2 * eval_position > dataset_bptt else eval_position
                 eval_position_bptt = int(eval_position_real * 2.0)

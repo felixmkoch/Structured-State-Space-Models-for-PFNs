@@ -24,6 +24,7 @@ import wandb
 from tabpfn.mamba import MambaModel
 from tabpfn.hydra import HydraModel
 from tabpfn.scripts import tabular_metrics
+import numpy as np
 
 class Losses():
     gaussian = nn.GaussianNLLLoss(full=True, reduction='none')
@@ -32,6 +33,27 @@ class Losses():
         num_classes = num_classes.shape[0] if torch.is_tensor(num_classes) else num_classes
         return nn.CrossEntropyLoss(reduction='none', weight=torch.ones(num_classes))
     bce = nn.BCEWithLogitsLoss(reduction='none')
+
+
+def sample_train(x, y, eval_position, bag_size):
+
+    generator = torch.Generator()
+    rng = np.random.RandomState()
+    gen_seed = rng.randint(1e7)
+    generator.manual_seed(gen_seed)
+
+    first_part_x = x[:eval_position]
+    first_part_y = y[:eval_position]
+
+    indices = torch.randint(0, eval_position, (bag_size,), generator=generator)
+
+    x_first_sampled = first_part_x[indices]
+    y_first_sampled = first_part_y[indices]
+
+    data_return = torch.cat((x_first_sampled, x[eval_position:]), dim=0)
+    targets_return = torch.cat((y_first_sampled, y[eval_position:]), dim=0)
+
+    return data_return, targets_return
 
 
 def permute_data(data, targets, eval_position, device="cuda:0"):
@@ -112,6 +134,7 @@ def train(priordataloader_class,
           evaluation_class: EvalHelper=None, 
           enable_autocast=True,
           permutation_repeat=0,
+          bootstrap_samples=0,
           enable_data_parallel=False,
           config={},
           model_type="",    # mamba/transformer/hydra
@@ -219,21 +242,22 @@ def train(priordataloader_class,
         total_positional_losses = 0.
         total_positional_losses_recorded = 0
         nan_steps = 0
-        ignore_steps = 0
+        #ignore_steps = 0
         before_get_batch = time.time()
         assert len(dl) % aggregate_k_gradients == 0, 'Please set the number of steps per epoch s.t. `aggregate_k_gradients` divides it.'
         
-        # Batch [int] is just a counter from 0 to num_batches.
-        # Data [tuple] Of length 3 [BPTT, batch_size/aggregate_k_gradients, num_features] [BPTT, batch_size/aggregate_k_gradients]
-        # Targets [Tensor] is a tensor of 1. and 0.. [BPTT, batch_size/aggregate_k_gradients]
-        # Note: Targets and Data[2] seem to be the same.
-        # Single_eval_pos idk what this does.
-        
         for batch, (data, targets, single_eval_pos) in enumerate(dl):
 
-            targets_original = targets
-
             for repeat in range(permutation_repeat + 1):
+
+                if bootstrap_samples:
+
+                    print(f"Bootstrap samples to a context of length {bootstrap_samples}.")
+
+                    eval_xs, eval_ys = sample_train(data, targets, single_eval_pos, bootstrap_samples)
+                    single_eval_pos = bootstrap_samples
+
+                targets_original = targets
 
                 if repeat > 0:   # Then shuffle
                     data, targets = permute_data(data, targets_original, eval_position=single_eval_pos)
@@ -316,16 +340,6 @@ def train(priordataloader_class,
                     #ignore_steps += (targets == -100).float().mean()
 
                 before_get_batch = time.time()
-
-        '''
-        return total_loss / (steps_per_epoch * (permutation_repeat + 1)), \
-                (total_positional_losses / total_positional_losses_recorded).tolist(), \
-                time_to_get_batch, \
-                forward_time, \
-                step_time, \
-                nan_steps.cpu().item()/(batch+1),\
-                0
-        '''
 
         return total_loss / (steps_per_epoch * (permutation_repeat + 1)), \
                 [], \

@@ -80,6 +80,7 @@ config["num_steps"] = 1024
 config["nlayers"] = 12
 config["enable_autocast"] = True
 config["enable_transformer_full_attn"] = True
+config["bootstrap_samples"] = 4096          # Default would be 0. 
 config["permutation_repeat"] = 0
 
 device = "cuda:0"
@@ -124,6 +125,7 @@ mamba_model = get_model(config,
                               use_autocast=config["enable_autocast"], 
                               evaluation_class=eval_class,
                               permutation_repeat=config["permutation_repeat"],
+                              bootstrap_samples = config["bootstrap_samples"],
                               enable_data_parallel=ENABLE_DATA_PARALLEL,
                               model_type=model_type
                               ) # , state_dict=model[2].state_dict()

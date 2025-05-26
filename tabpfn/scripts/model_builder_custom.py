@@ -9,6 +9,7 @@ import torch
 import math
 import subprocess as sp
 import os
+import numpy as np
 
 def load_model_only_inference(path, filename, device, model_name=""):
     """
@@ -216,6 +217,7 @@ def get_model(config,
               use_autocast=True, 
               evaluation_class=None, 
               permutation_repeat=0,
+              bootstrap_samples=0,
               enable_data_parallel=False,
               model_type=""
               ):
@@ -371,6 +373,7 @@ def get_model(config,
                   , verbose=verbose_train
                   , evaluation_class=evaluation_class
                   , permutation_repeat=permutation_repeat
+                  , bootstrap_samples=bootstrap_samples
                   , enable_data_parallel=enable_data_parallel
                   , weight_decay=config.get('weight_decay', 0.0)
                   , config=config
