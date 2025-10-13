@@ -36,28 +36,40 @@ class Losses():
 
 
 def sample_train(x, y, eval_position, bag_size):
-
     generator = torch.Generator()
     rng = np.random.RandomState()
     gen_seed = rng.randint(1e7)
     generator.manual_seed(gen_seed)
 
-    first_part_x1 = x[1][:eval_position]
-    first_part_x2 = x[2][:eval_position]
-    first_part_y = y[:eval_position]
+    n = eval_position
+    m = bag_size
 
-    indices = torch.randint(0, eval_position, (bag_size,), generator=generator)
+    first_part_x1 = x[1][:n]
+    first_part_x2 = x[2][:n]
+    first_part_y = y[:n]
 
+    # Start by including all examples at least once
+    indices = torch.arange(n)
+
+    # If we need more than n samples, randomly sample the remaining (with replacement)
+    if m > n:
+        extra = torch.randint(0, n, (m - n,), generator=generator)
+        indices = torch.cat((indices, extra))
+
+    # Shuffle to avoid ordered blocks (optional but recommended)
+    indices = indices[torch.randperm(len(indices), generator=generator)]
+
+    # Select samples
     x1_first_sampled = first_part_x1[indices]
     x2_first_sampled = first_part_x2[indices]
     y_first_sampled = first_part_y[indices]
 
-    x1_return = torch.cat((x1_first_sampled, x[1][eval_position:]), dim=0)
-    x2_return = torch.cat((x2_first_sampled, x[2][eval_position:]), dim=0)
-    targets_return = torch.cat((y_first_sampled, y[eval_position:]), dim=0)
+    # Concatenate with the eval/test part
+    x1_return = torch.cat((x1_first_sampled, x[1][n:]), dim=0)
+    x2_return = torch.cat((x2_first_sampled, x[2][n:]), dim=0)
+    targets_return = torch.cat((y_first_sampled, y[n:]), dim=0)
 
     data_return = (None, x1_return, x2_return)
-
     return data_return, targets_return
 
 
