@@ -51,12 +51,11 @@ def sample_train(x, y, eval_position, bag_size):
     # Start by including all examples at least once
     indices = torch.arange(n)
 
-    # If we need more than n samples, randomly sample the remaining (with replacement)
+    # Fill up the rest of the places with sampled examples with replacement.
     if m > n:
         extra = torch.randint(0, n, (m - n,), generator=generator)
         indices = torch.cat((indices, extra))
 
-    # Shuffle to avoid ordered blocks (optional but recommended)
     indices = indices[torch.randperm(len(indices), generator=generator)]
 
     # Select samples
