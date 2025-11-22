@@ -19,4 +19,4 @@ pip install wandb
 
 pip install causal-conv1d>=1.4.0
 
-pip install mamba-ssm
+pip install mamba-ssm==2.2.2
