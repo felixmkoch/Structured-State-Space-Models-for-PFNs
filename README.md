@@ -1,5 +1,7 @@
 ## Structured State Space Models for Prior-Fitted Data Networks
 
+Repository to reproduce the result of the paper **State-Space Models for Tabular Prior-Data Fitted Networks** available on [Arxiv](https://arxiv.org/pdf/2510.14573).
+
 This repository is built on the code of [TabPFN](https://github.com/automl/TabPFN).
 
 Other Dependencies used:
@@ -38,3 +40,13 @@ For training, just use train_custom_model.py
 Most parts of this work are licensed under the MIT license if not stated otherwise.  
 
 Files in the tabpfn/ folder except those regarding mamba or hydra are under the license of [TabPFN](https://github.com/automl/TabPFN)
+
+## Citation
+```
+@article{koch2025state,
+  title={State-Space Models for Tabular Prior-Data Fitted Networks},
+  author={Koch, Felix and Wever, Marcel and Raisch, Fabian and Tischler, Benjamin},
+  journal={arXiv preprint arXiv:2510.14573},
+  year={2025}
+}
+```
