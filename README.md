@@ -46,7 +46,7 @@ Files in the tabpfn/ folder except those regarding mamba or hydra are under the 
 @article{ssmsforpfns2025,
   title={State-Space Models for Tabular Prior-Data Fitted Networks},
   author={Koch, Felix and Wever, Marcel and Raisch, Fabian and Tischler, Benjamin},
-  journal={arXiv preprint arXiv:2510.14573},
+  journal={1st ICML Workshop on Foundation Models for Structured Data},
   year={2025}
 }
 ```
