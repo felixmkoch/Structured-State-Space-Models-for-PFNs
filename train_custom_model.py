@@ -74,6 +74,7 @@ config['batch_size'] = 64
 config['emsize'] = 512 
 config["epochs"] = 200
 config["bptt"] = 1024
+config["max_eval_pos"] = 1000        
 
 config["num_steps"] = 1024
 
