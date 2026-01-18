@@ -169,16 +169,25 @@ def train(priordataloader_class,
         
 
     curriculum_dls = {}
-    if curriculum_cfg:    
-        curriculum_dls = {k: 
-                      priordataloader_class(
-                          num_steps=steps_per_epoch, 
-                          batch_size=batch_size, 
-                          eval_pos_seq_len_sampler=curriculum_cfg[1][k], 
-                          seq_len_maximum=v[0]+(bptt_extra_samples if bptt_extra_samples else 0), 
-                          device=device, 
-                          **extra_prior_kwargs_dict)
-                        for k,v in curriculum_cfg[0].items()}
+    if curriculum_cfg:
+        for k, v in curriculum_cfg[0].items():
+            sepg = curriculum_cfg[1][k] # Single Eval Pos Gen.
+            sepg = sepg if callable(sepg) else lambda: sepg
+            def curr_eval_pos_seq_len_sampler():
+                single_eval_pos = sepg()
+                if bptt_extra_samples:
+                    return single_eval_pos, single_eval_pos + bptt_extra_samples
+                else:
+                    return single_eval_pos, bptt
+                
+            curriculum_dls[k] = (priordataloader_class(
+                                    num_steps=steps_per_epoch, 
+                                    batch_size=batch_size, 
+                                    eval_pos_seq_len_sampler=curr_eval_pos_seq_len_sampler, 
+                                    seq_len_maximum=v[0]+(bptt_extra_samples if bptt_extra_samples else 0), 
+                                    device=device, 
+                                    **extra_prior_kwargs_dict
+                                ), sepg)
     
     dl = priordataloader_class(num_steps=steps_per_epoch, batch_size=batch_size, eval_pos_seq_len_sampler=eval_pos_seq_len_sampler, seq_len_maximum=bptt+(bptt_extra_samples if bptt_extra_samples else 0), device=device, **extra_prior_kwargs_dict)
 
@@ -255,8 +264,8 @@ def train(priordataloader_class,
         model = torch.nn.parallel.DistributedDataParallel(model, device_ids=[rank], output_device=rank, broadcast_buffers=False)
     dl.model = model
     if curriculum_cfg:
-        for _, dl in curriculum_dls.items():
-            dl.model = model
+        for _, tup in curriculum_dls.items():
+            tup[0].model = model
 
     optimizer = torch.optim.AdamW(model.parameters(), lr=lr, weight_decay=weight_decay)
     scheduler = scheduler(optimizer, warmup_epochs, epochs if epochs is not None else 100) # when training for fixed time lr schedule takes 100 steps
@@ -264,7 +273,7 @@ def train(priordataloader_class,
     scaler = GradScaler("cuda") if train_mixed_precision else None
 
     # check that everything uses up-to-date APIs
-    utils.check_compatibility(dl)
+    utils.check_compatibility(dl, single_eval_pos_gen)
 
     def train_epoch(dl):
         model.train()  # Turn on the train mode
@@ -393,11 +402,12 @@ def train(priordataloader_class,
 
             # Check if curriculum learning requires new dataloader object -> update hte dataloader.
             if curriculum_cfg and epoch in curriculum_dls.keys():
-                dl = curriculum_dls[epoch]
+                dl = curriculum_dls[epoch][0]
+                single_eval_pos_gen = curriculum_dls[epoch][1]
 
             epoch_start_time = time.time()
             total_loss, total_positional_losses, time_to_get_batch, forward_time, step_time, nan_share, ignore_share =\
-                train_epoch(dl)
+                train_epoch(dl, single_eval_pos_gen)
             if hasattr(dl, 'validate') and epoch % validation_period == 0:
                 with torch.no_grad():
                     val_score = dl.validate(model)
