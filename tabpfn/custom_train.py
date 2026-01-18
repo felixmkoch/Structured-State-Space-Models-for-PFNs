@@ -152,7 +152,7 @@ def train(priordataloader_class,
           config={},
           model_type="",    # mamba/transformer/hydra
           transformer_full_attn = False,
-          curriculum_cfg={},
+          curriculum_cfg=(),
           **model_extra_args
           ):
     device = gpu_device if torch.cuda.is_available() else 'cpu:0'
@@ -174,11 +174,11 @@ def train(priordataloader_class,
                       priordataloader_class(
                           num_steps=steps_per_epoch, 
                           batch_size=batch_size, 
-                          eval_pos_seq_len_sampler=v[1], 
-                          seq_len_maximum=v[0][0]+(bptt_extra_samples if bptt_extra_samples else 0), 
+                          eval_pos_seq_len_sampler=curriculum_cfg[1][k], 
+                          seq_len_maximum=v[0]+(bptt_extra_samples if bptt_extra_samples else 0), 
                           device=device, 
                           **extra_prior_kwargs_dict)
-                        for k,v in curriculum_cfg.items()}
+                        for k,v in curriculum_cfg[0].items()}
     
     dl = priordataloader_class(num_steps=steps_per_epoch, batch_size=batch_size, eval_pos_seq_len_sampler=eval_pos_seq_len_sampler, seq_len_maximum=bptt+(bptt_extra_samples if bptt_extra_samples else 0), device=device, **extra_prior_kwargs_dict)
 
