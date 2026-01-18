@@ -273,9 +273,9 @@ def train(priordataloader_class,
     scaler = GradScaler("cuda") if train_mixed_precision else None
 
     # check that everything uses up-to-date APIs
-    utils.check_compatibility(dl, single_eval_pos_gen)
+    utils.check_compatibility(dl)
 
-    def train_epoch(dl):
+    def train_epoch(dl, single_eval_pos_gen):
         model.train()  # Turn on the train mode
         total_loss = 0.
         total_positional_losses = 0.
