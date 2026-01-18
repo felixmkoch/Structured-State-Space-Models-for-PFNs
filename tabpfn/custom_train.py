@@ -52,7 +52,7 @@ def sample_train(x, y, eval_position, bag_size):
     indices = torch.arange(n)
 
     # Fill up the rest of the places with sampled examples with replacement.
-    if m > n:
+    if m >= n:
         extra = torch.randint(0, n, (m - n,), generator=generator)
         indices = torch.cat((indices, extra))
 
@@ -280,7 +280,8 @@ def train(priordataloader_class,
 
             for repeat in range(permutation_repeat + 1):
 
-                if bootstrap_samples:
+                # And single_eval_pos is a fix because the sample_train will else throw an error.
+                if bootstrap_samples and single_eval_pos > 0:
 
                     print(f"Bootstrap samples to a context of length {bootstrap_samples}.")
 
