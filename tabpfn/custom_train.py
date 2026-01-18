@@ -173,7 +173,8 @@ def train(priordataloader_class,
         for k, v in curriculum_cfg[0].items():
             sepg = curriculum_cfg[1][k] # Single Eval Pos Gen.
             sepg = sepg if callable(sepg) else lambda: sepg
-            def curr_eval_pos_seq_len_sampler(sepg=sepg):
+            curr_bptt = v[0]
+            def curr_eval_pos_seq_len_sampler(sepg=sepg, bptt=bptt):
                 single_eval_pos = sepg()
                 if bptt_extra_samples:
                     return single_eval_pos, single_eval_pos + bptt_extra_samples
@@ -275,7 +276,7 @@ def train(priordataloader_class,
     # check that everything uses up-to-date APIs
     utils.check_compatibility(dl)
 
-    def train_epoch(dl, single_eval_pos_gen):
+    def train_epoch(dl, single_eval_pos_gen, bootstrap_samples):
         model.train()  # Turn on the train mode
         total_loss = 0.
         total_positional_losses = 0.
@@ -405,10 +406,11 @@ def train(priordataloader_class,
                 print(f"Triggering curriculum learning change at epoch {epoch}.")
                 dl = curriculum_dls[epoch][0]
                 single_eval_pos_gen = curriculum_dls[epoch][1]
+                bootstrap_samples = curriculum_cfg[0][epoch][0] # Set bootstrap samples to bptt of curriculum per default.
 
             epoch_start_time = time.time()
             total_loss, total_positional_losses, time_to_get_batch, forward_time, step_time, nan_share, ignore_share =\
-                train_epoch(dl, single_eval_pos_gen)
+                train_epoch(dl, single_eval_pos_gen, bootstrap_samples)
             if hasattr(dl, 'validate') and epoch % validation_period == 0:
                 with torch.no_grad():
                     val_score = dl.validate(model)
