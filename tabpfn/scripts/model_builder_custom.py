@@ -219,7 +219,8 @@ def get_model(config,
               permutation_repeat=0,
               bootstrap_samples=0,
               enable_data_parallel=False,
-              model_type=""
+              model_type="",
+              schedule: dict = {}   # Schedule for curriculum learning
               ):
 
     #------------------------------------------------------------------------------------------------
@@ -239,6 +240,19 @@ def get_model(config,
     config['num_steps'] = math.ceil(config['num_steps'] * config['aggregate_k_gradients'])
     config['batch_size'] = math.ceil(config['batch_size'] / config['aggregate_k_gradients'])
     config['recompute_attn'] = config['recompute_attn'] if 'recompute_attn' in config else False
+
+    # Default schedule
+    curriculum_schedule = {}
+    curriculum_cfg=None
+    if schedule:
+
+        print("Training with curriculum schedule.")
+
+        for k, v in schedule.items():
+            curriculum_schedule[k] = get_uniform_single_eval_pos_sampler(v[1] if v[1] else v[0], min_len=config.get('min_eval_pos', 0))
+
+        curriculum_cfg = (schedule, curriculum_schedule)
+
 
     #
     # Function to make new Batches
@@ -379,6 +393,7 @@ def get_model(config,
                   , config=config
                   , transformer_full_attn = config.get("enable_transformer_full_attn", False)
                   , model_type=model_type
+                  , curriculum_cfg=curriculum_cfg
             )
 
     #------------------------------------------------------------------------------------------------

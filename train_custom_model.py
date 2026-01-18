@@ -68,7 +68,7 @@ config["num_features_used"] = uniform_int_sampler_f(1, max_features)
 #                                          CUSTOM
 #------------------------------------------------------------------------------------------------
 
-model_type = "mamba"
+model_type = "hydra"
 
 config['batch_size'] = 64 
 config['emsize'] = 512 
@@ -81,11 +81,22 @@ config["num_steps"] = 1024
 config["nlayers"] = 12
 config["enable_autocast"] = True
 config["enable_transformer_full_attn"] = False
-config["bootstrap_samples"] = 4096          # Default would be 0. 
+config["bootstrap_samples"] = 1024          # Default would be 0. 
 config["permutation_repeat"] = 0
 
 device = "cuda:0"
 ENABLE_DATA_PARALLEL = False
+
+# Curriculum Learning Schedule (Optional)
+# Key is the epoch and value is the change [bptt, max_eval_pos].
+# Start with 1. If not given, takes default from config wihout curriculum learning.
+schedule = {
+    1: (128, 120),
+    200: (256, 248),
+    400: (512, 500),
+    600: (768, 752),
+    1000: (1024, 1000)
+}
 
 #os.environ["SLURM_PROCID"]="1"
 
@@ -128,7 +139,8 @@ mamba_model = get_model(config,
                               permutation_repeat=config["permutation_repeat"],
                               bootstrap_samples = config["bootstrap_samples"],
                               enable_data_parallel=ENABLE_DATA_PARALLEL,
-                              model_type=model_type
+                              model_type=model_type,
+                              schedule=schedule
                               ) # , state_dict=model[2].state_dict()
 
 (hp_embedding, data, _), targets, single_eval_pos = next(iter(mamba_model[3]))

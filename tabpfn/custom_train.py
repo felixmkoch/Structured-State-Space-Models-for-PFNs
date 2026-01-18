@@ -152,6 +152,7 @@ def train(priordataloader_class,
           config={},
           model_type="",    # mamba/transformer/hydra
           transformer_full_attn = False,
+          curriculum_cfg={},
           **model_extra_args
           ):
     device = gpu_device if torch.cuda.is_available() else 'cpu:0'
@@ -165,6 +166,20 @@ def train(priordataloader_class,
             return single_eval_pos, single_eval_pos + bptt_extra_samples
         else:
             return single_eval_pos, bptt
+        
+
+    curriculum_dls = {}
+    if curriculum_cfg:    
+        curriculum_dls = {k: 
+                      priordataloader_class(
+                          num_steps=steps_per_epoch, 
+                          batch_size=batch_size, 
+                          eval_pos_seq_len_sampler=v[1], 
+                          seq_len_maximum=v[0][0]+(bptt_extra_samples if bptt_extra_samples else 0), 
+                          device=device, 
+                          **extra_prior_kwargs_dict)
+                        for k,v in curriculum_cfg.items()}
+    
     dl = priordataloader_class(num_steps=steps_per_epoch, batch_size=batch_size, eval_pos_seq_len_sampler=eval_pos_seq_len_sampler, seq_len_maximum=bptt+(bptt_extra_samples if bptt_extra_samples else 0), device=device, **extra_prior_kwargs_dict)
 
     encoder = encoder_generator(dl.num_features, emsize)
@@ -220,7 +235,6 @@ def train(priordataloader_class,
         )
         
 
-
     model.criterion = criterion
     if load_weights_from_this_state_dict is not None:
         model.load_state_dict(load_weights_from_this_state_dict)
@@ -240,6 +254,9 @@ def train(priordataloader_class,
         print("Distributed training")
         model = torch.nn.parallel.DistributedDataParallel(model, device_ids=[rank], output_device=rank, broadcast_buffers=False)
     dl.model = model
+    if curriculum_cfg:
+        for _, dl in curriculum_dls.items():
+            dl.model = model
 
     optimizer = torch.optim.AdamW(model.parameters(), lr=lr, weight_decay=weight_decay)
     scheduler = scheduler(optimizer, warmup_epochs, epochs if epochs is not None else 100) # when training for fixed time lr schedule takes 100 steps
@@ -249,7 +266,7 @@ def train(priordataloader_class,
     # check that everything uses up-to-date APIs
     utils.check_compatibility(dl)
 
-    def train_epoch():
+    def train_epoch(dl):
         model.train()  # Turn on the train mode
         total_loss = 0.
         total_positional_losses = 0.
@@ -365,8 +382,6 @@ def train(priordataloader_class,
     total_loss = float('inf')
     total_positional_losses = float('inf')
 
-
-
     print("Beginning the Training process")
     print(f"Total number of epochs: {epochs}")
 
@@ -375,9 +390,13 @@ def train(priordataloader_class,
     try:
         for epoch in (range(1, epochs + 1) if epochs is not None else itertools.count(1)):
 
+            # Check if curriculum learning requires new dataloader object -> update hte dataloader.
+            if curriculum_cfg and epoch in curriculum_dls.keys():
+                dl = curriculum_dls[epoch]
+
             epoch_start_time = time.time()
             total_loss, total_positional_losses, time_to_get_batch, forward_time, step_time, nan_share, ignore_share =\
-                train_epoch()
+                train_epoch(dl)
             if hasattr(dl, 'validate') and epoch % validation_period == 0:
                 with torch.no_grad():
                     val_score = dl.validate(model)
