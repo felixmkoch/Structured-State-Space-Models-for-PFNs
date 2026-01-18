@@ -173,7 +173,7 @@ def train(priordataloader_class,
         for k, v in curriculum_cfg[0].items():
             sepg = curriculum_cfg[1][k] # Single Eval Pos Gen.
             sepg = sepg if callable(sepg) else lambda: sepg
-            def curr_eval_pos_seq_len_sampler():
+            def curr_eval_pos_seq_len_sampler(sepg=sepg):
                 single_eval_pos = sepg()
                 if bptt_extra_samples:
                     return single_eval_pos, single_eval_pos + bptt_extra_samples
@@ -309,10 +309,10 @@ def train(priordataloader_class,
                 with cm:
                     time_to_get_batch = time.time() - before_get_batch
                     before_forward = time.time()
-                    if bptt_extra_samples is None:
-                        single_eval_pos = single_eval_pos_gen() if callable(single_eval_pos_gen) else single_eval_pos_gen
-                    else:
-                        single_eval_pos = targets.shape[0] - bptt_extra_samples
+                    #if bptt_extra_samples is None:
+                    #    single_eval_pos = single_eval_pos_gen() if callable(single_eval_pos_gen) else single_eval_pos_gen
+                    #else:
+                    #    single_eval_pos = targets.shape[0] - bptt_extra_samples
 
                     with autocast("cuda", enabled=scaler is not None):
                         # If style is set to None, it should not be transferred to device
@@ -402,6 +402,7 @@ def train(priordataloader_class,
 
             # Check if curriculum learning requires new dataloader object -> update hte dataloader.
             if curriculum_cfg and epoch in curriculum_dls.keys():
+                print(f"Triggering curriculum learning change at epoch {epoch}.")
                 dl = curriculum_dls[epoch][0]
                 single_eval_pos_gen = curriculum_dls[epoch][1]
 
