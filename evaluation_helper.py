@@ -27,6 +27,14 @@ class EvalHelper:
         self.datasets_data = {}
         self.limit_dict = {}
 
+        self.EVALUATION_TYPE_FILTERS = {
+            "categorical": True,
+            "nans": True,
+            "multiclass": True
+        }
+
+
+
 
     def check_datasets_data(self, dids):
 
@@ -45,7 +53,7 @@ class EvalHelper:
 
         self.check_datasets_data(self.valid_dids_classification)
 
-        self.make_limit_datasets(max_classes, max_features, self.valid_dids_classification)
+        self.make_limit_datasets(max_classes, max_features, self.valid_dids_classification, self.EVALUATION_TYPE_FILTERS)
 
         for did in self.valid_dids_classification:
             results[did] = evaluate(self.limit_dict[did], bptt, eval_positions, metric, model, device,method_name=method_name)["mean_metric"]
@@ -63,7 +71,7 @@ class EvalHelper:
 
         self.check_datasets_data(self.test_dids_classification)
 
-        self.make_limit_datasets(max_classes, max_features, self.test_dids_classification)
+        self.make_limit_datasets(max_classes, max_features, self.test_dids_classification, self.EVALUATION_TYPE_FILTERS)
 
         for did in self.test_dids_classification:
             results[did] = evaluate(self.limit_dict[did], bptt, eval_positions, metric, model, device,method_name=method_name)["mean_metric"]
@@ -227,45 +235,6 @@ class EvalHelper:
 
         return None
 
-
-
-    ''' Need to fix this later
-    def do_naive_evaluation(self):
-
-        performances = []
-
-        for ds_name, X, y, categorical_feats, _, _ in self.datasets_data:
-            
-            unique, counts = np.unique(y, return_counts=True)
-            majority_class = unique[np.argmax(counts)]
-
-            predictions = np.full_like(y, majority_class)
-
-            metric = tabular_metrics.auc_metric
-            performance = metric(y, predictions)
-
-            performances.append(performance)
-
-        print(f"Naive Evluation has mean of {sum(performances) / len(performances)}")
-
-        return sum(performances) / len(performances)
-
-    def log_wandb_naive_evaluation(self, num_steps=100, log_name="mamba_mean_acc"):
-
-        wandb_project = "mamba_project"
-        wandb_job_type = "naive_model_exec"
-        wandb_run_name = "Majority Class Prediction"
-
-        wandb_config= {}
-
-        wandb_run = wandb.init(project=wandb_project,job_type=wandb_job_type,config=wandb_config, name=wandb_run_name)
-
-        naive_result = self.do_naive_evaluation()
-
-        for _ in range(num_steps): wandb.log({f"test/{log_name}": naive_result}) 
-
-        wandb_run.finish()
-    '''
 
 
 if __name__ == "__main__":
