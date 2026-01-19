@@ -406,7 +406,8 @@ def train(priordataloader_class,
                 print(f"Triggering curriculum learning change at epoch {epoch}.")
                 dl = curriculum_dls[epoch][0]
                 single_eval_pos_gen = curriculum_dls[epoch][1]
-                bootstrap_samples = curriculum_cfg[0][epoch][0] # Set bootstrap samples to bptt of curriculum per default.
+                if bootstrap_samples:   # Only update that if bootstrap samples are active in the first place.
+                    bootstrap_samples = curriculum_cfg[0][epoch][0] # Set bootstrap samples to bptt of curriculum per default.
 
             epoch_start_time = time.time()
             total_loss, total_positional_losses, time_to_get_batch, forward_time, step_time, nan_share, ignore_share =\
