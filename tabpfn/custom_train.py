@@ -290,14 +290,6 @@ def train(priordataloader_class,
 
             for repeat in range(permutation_repeat + 1):
 
-                # And single_eval_pos is a fix because the sample_train will else throw an error.
-                if bootstrap_samples and single_eval_pos > 0:
-
-                    print(f"Bootstrap samples to a context of length {bootstrap_samples}.")
-
-                    data, targets = sample_train(data, targets, single_eval_pos, bootstrap_samples)
-                    single_eval_pos = bootstrap_samples
-
                 targets_original = targets
 
                 if repeat > 0:   # Then shuffle
@@ -325,7 +317,8 @@ def train(priordataloader_class,
                                 if isinstance(data, tuple)
 
                             else data.to(device), 
-                            single_eval_pos=single_eval_pos)
+                            single_eval_pos=single_eval_pos,
+                            bootstrap_samples=bootstrap_samples)    # Only for hydra model - might throw an error for other models -> Remove if you want to use another one.
 
                         forward_time = time.time() - before_forward
 

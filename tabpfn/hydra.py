@@ -353,11 +353,35 @@ class HydraModel(nn.Module):
         )
 
 
+    def sample_train(self, tensor: torch.Tensor, n: int, replace: bool = True):
+        m = tensor.size(0)
+
+        if n <= m:
+            return tensor[:n]
+
+        # number of sampled rows needed
+        k = n - m
+
+        # sample indices from existing rows
+        indices = torch.randint(
+            low=0,
+            high=m,
+            size=(k,),
+            device=tensor.device
+        ) if replace else torch.randperm(m, device=tensor.device)[:k]
+
+        sampled = tensor[indices]          # [k, x, y]
+        output = torch.cat([sampled, tensor], dim=0)  # [n, x, y]
+
+        return output
+
+
     def forward(self,
                 src: tuple,  # Inputs (src) have to be given as (x,y) or (style,x,y) tuple'
                 single_eval_pos: int,
                 single_evaluation_prompt = False,
-                jrt_prompt: bool = False
+                jrt_prompt: bool = False,
+                bootstrap_samples: int = 0
                 ):
         
         if len(src) == 2: src = (None,) + src       # Check whether a style was given
@@ -392,8 +416,12 @@ class HydraModel(nn.Module):
                 output_res.append(output[-1, :, :])
 
             return torch.stack(output_res, dim=0)
-
-        src = torch.cat([style_src, train_x, x_src[single_eval_pos:]], 0)
+        
+        if bootstrap_samples:
+            train_x_bootstrap = self.sample_train(train_x, n=bootstrap_samples)
+            src = torch.cat([style_src, train_x_bootstrap, x_src[single_eval_pos:]], 0)
+        else:
+            src = torch.cat([style_src, train_x, x_src[single_eval_pos:]], 0)
 
         if jrt_prompt:
             src_len_before = src.size(0)
