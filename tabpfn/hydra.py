@@ -420,6 +420,7 @@ class HydraModel(nn.Module):
         if bootstrap_samples:
             train_x_bootstrap = self.sample_train(train_x, n=bootstrap_samples)
             src = torch.cat([style_src, train_x_bootstrap, x_src[single_eval_pos:]], 0)
+            single_eval_pos = bootstrap_samples
         else:
             src = torch.cat([style_src, train_x, x_src[single_eval_pos:]], 0)
 
