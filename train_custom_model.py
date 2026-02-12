@@ -32,7 +32,7 @@ from evaluation_helper import EvalHelper
 
 # Other Parameters
 base_path = '.'
-max_features = 100
+max_features = 10
 large_datasets = True
 
 # Others
@@ -71,17 +71,17 @@ config["num_features_used"] = uniform_int_sampler_f(1, max_features)
 model_type = "hydra"
 
 config['batch_size'] = 64 
-config['emsize'] = 512 
+config['emsize'] = 128 
 config["epochs"] = 200
-config["bptt"] = 1024
-config["max_eval_pos"] = 1000        
+config["bptt"] = 100
+config["max_eval_pos"] = 90       
 
-config["num_steps"] = 1024
+config["num_steps"] = 64
 
 config["nlayers"] = 12
 config["enable_autocast"] = True
 config["enable_transformer_full_attn"] = False
-config["bootstrap_samples"] = 1024          # Default would be 0. 
+config["bootstrap_samples"] = 0          # Default would be 0. 
 config["permutation_repeat"] = 0
 
 device = "cuda:0"
@@ -108,7 +108,7 @@ schedule = {
 #                                           WANDB
 #------------------------------------------------------------------------------------------------
 
-wandb_project = "mamba_project"
+wandb_project = "void"
 wandb_job_type = f"create_{model_type}_model"
 wandb_run_name = f"{model_type} {config['nlayers']}l {config['emsize']}e {config['batch_size']}b"
 

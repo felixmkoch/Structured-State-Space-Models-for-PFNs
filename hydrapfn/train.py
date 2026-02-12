@@ -9,7 +9,7 @@ from hydrapfn.utils import get_cosine_schedule_with_warmup
 from hydrapfn.utils import init_dist
 import hydrapfn.utils as utils
 from tabpfn.scripts import tabular_metrics
-from hydrapfn.hydra import HydraModel
+from hydrapfn.hydra_context import HydraModel
 from hydra_evaluation_helper import EvalHelper
 
 
@@ -44,6 +44,7 @@ def train(
         aggregate_k_gradients=1,
         train_mixed_precision=False, 
         evaluation_class: EvalHelper=None, 
+        use_cross_attention: bool = False,
         config={},
         **model_extra_args
 ):
@@ -79,6 +80,7 @@ def train(
             nhid=nhid,
             y_encoder=y_encoder_generator(1, emsize),
             num_layers=nlayers,
+            use_cross_attention=use_cross_attention,
             device=device
         )
     
@@ -108,6 +110,10 @@ def train(
             cm = nullcontext()
             with cm:
                 single_eval_pos = single_eval_pos_gen() if callable(single_eval_pos_gen) else single_eval_pos_gen
+                # Quickfix: Hydra with the application only on the context cannot handle sequences < 7 long (conv kernel)
+                if single_eval_pos < 8:
+                    continue
+
                 with autocast("cuda", enabled=scaler is not None):
                     output = model(
                         tuple(

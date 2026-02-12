@@ -41,9 +41,9 @@ device = "cuda:0"
 #                                           WANDB
 #------------------------------------------------------------------------------------------------
 
-wandb_project = "void"
+wandb_project = "hydrapfn"
 wandb_job_type = f"test"
-wandb_run_name = f"test"
+wandb_run_name = f"test_local"
 
 wandb_config= config
 
@@ -55,16 +55,17 @@ eval_class = EvalHelper()
 #                                          CUSTOM
 #------------------------------------------------------------------------------------------------
 
-config['batch_size'] = 64 
-config['emsize'] = 64 
-config["epochs"] = 1
-config["bptt"] = 100
-config["max_eval_pos"] = 90       
+config['batch_size'] = 128 
+config['emsize'] = 256 
+config["epochs"] = 50
+config["bptt"] = 128
+config["max_eval_pos"] = 100       
 
 config["num_steps"] = 16
 
 config["nlayers"] = 4
 config["enable_autocast"] = True
+config["use_cross_attention"] = True
 
 device = "cuda:0"
 

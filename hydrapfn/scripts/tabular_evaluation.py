@@ -94,6 +94,7 @@ def evaluate_position(X,
 
     eval_ys = eval_ys[eval_position:]
 
+
     if outputs is None:
         print('Execution failed', ds_name)
         return None
@@ -103,6 +104,8 @@ def evaluate_position(X,
         eval_ys = eval_ys.cpu()
 
     ds_result = None, outputs, eval_ys, inference_time
+
+    return ds_result
     
 
 
