@@ -55,8 +55,8 @@ eval_class = EvalHelper()
 #                                          CUSTOM
 #------------------------------------------------------------------------------------------------
 
-config['batch_size'] = 128 
-config['emsize'] = 256 
+config['batch_size'] = 32 
+config['emsize'] = 128 
 config["epochs"] = 50
 config["bptt"] = 128
 config["max_eval_pos"] = 100       
@@ -65,7 +65,11 @@ config["num_steps"] = 16
 
 config["nlayers"] = 4
 config["enable_autocast"] = True
+
+# Using cross-attention to combine the hidden state resulting from hydra with the query examples.
 config["use_cross_attention"] = True
+# Resulation to punish deviations from permutated hidden states.
+config["perm_reg_lam"] = 0.0
 
 device = "cuda:0"
 

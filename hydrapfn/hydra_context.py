@@ -391,42 +391,66 @@ class HydraModel(nn.Module):
             )
         )
 
+    def permute_context(self, x_src, y_src, single_eval_pos):
 
-    def forward(self, src: tuple, single_eval_pos: int, **kwargs):
+        device = x_src.device
+        perm = torch.randperm(single_eval_pos, device=device)
+
+        x_perm = x_src.clone()
+        y_perm = y_src.clone()
+
+        x_perm[:single_eval_pos] = x_perm[perm]
+        y_perm[:single_eval_pos] = y_perm[perm]
+
+        return x_perm, y_perm
+
+
+    def forward(
+        self,
+        src: tuple,
+        single_eval_pos: int,
+        compute_perm_reg: bool = False,
+        **kwargs
+    ):
+
         _, x_src, y_src = src
 
-        # Encode features
+        # Encode
         x_src = self.encoder(x_src)
         y_src = self.y_encoder(
             y_src.unsqueeze(-1) if len(y_src.shape) < len(x_src.shape) else y_src
         )
 
-        # Split context and query
+        # ---------- ORIGINAL CONTEXT ----------
         context_tokens = x_src[:single_eval_pos] + y_src[:single_eval_pos]
         query_tokens = x_src[single_eval_pos:]
 
-        # --- Run Hydra on context ---
         context_tokens = context_tokens.permute(1, 0, 2)  # (B, Nc, D)
         context_hidden = self.mamba_backbone(context_tokens, inference_parameters=None)
 
-        query_tokens = query_tokens.permute(1, 0, 2)  # (B, Nq, D)
+        query_tokens = query_tokens.permute(1, 0, 2)
 
         if self.use_cross_attention:
-            # Query attends to ALL context hidden states
-            conditioned_query = self.cross_attn(query_tokens, context_hidden)  # (B, Nq, D)
-
-            # Decode query only
-            conditioned_query = conditioned_query.permute(1, 0, 2)  # (Nq, B, D)
-            output = self.decoder(conditioned_query)  # (Nq, B, n_out)
-
+            conditioned_query = self.cross_attn(query_tokens, context_hidden)
+            conditioned_query = conditioned_query.permute(1, 0, 2)
+            output = self.decoder(conditioned_query)
         else:
-            full_sequence = torch.cat([context_hidden, query_tokens], dim=1)  # (B, Nc+Nq, D)
+            full_sequence = torch.cat([context_hidden, query_tokens], dim=1)
+            full_sequence = full_sequence.permute(1, 0, 2)
+            decoded = self.decoder(full_sequence)
+            output = decoded[single_eval_pos:]
 
-            full_sequence = full_sequence.permute(1, 0, 2)  # (Nc+Nq, B, D)
-            decoded = self.decoder(full_sequence)  # (Nc+Nq, B, n_out)
+        # ---------- PERMUTED CONTEXT (for regularization) ----------
+        perm_context_hidden = None
+        if compute_perm_reg:
+            x_perm, y_perm = self.permute_context(x_src, y_src, single_eval_pos)
 
-            # Always return only QUERY part
-            output = decoded[single_eval_pos:]  # (Nq, B, n_out)
+            context_tokens_perm = x_perm[:single_eval_pos] + y_perm[:single_eval_pos]
+            context_tokens_perm = context_tokens_perm.permute(1, 0, 2)
 
-        return output
+            perm_context_hidden = self.mamba_backbone(
+                context_tokens_perm, inference_parameters=None
+            )
+
+        return output, context_hidden, perm_context_hidden
 

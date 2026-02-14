@@ -42,9 +42,10 @@ def hydra_predict(model,
         # no_grad disables inference_mode, because otherwise the gradients are lost
         inference_mode_call = torch.inference_mode() if inference_mode and no_grad else NOP()
         with inference_mode_call:
-            output = model(
+            output, _, _ = model(
                     (None, eval_xs, eval_ys.float()),
-                    single_eval_pos=eval_position)[:, :, 0:num_classes]
+                    single_eval_pos=eval_position)
+            output = output[:, :, 0:num_classes]
 
             output = output[:, :, 0:num_classes] / torch.exp(softmax_temperature)
             if not return_logits:

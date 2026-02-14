@@ -22,6 +22,35 @@ class Losses():
     bce = nn.BCEWithLogitsLoss(reduction='none')
 
 
+def symmetric_kl_hidden(h1, h2, eps=1e-8):
+    """
+    Symmetric KL between two hidden sequences.
+    h1, h2: (B, Nc, D)
+    """
+    p = torch.softmax(h1, dim=-1)
+    q = torch.softmax(h2, dim=-1)
+
+    kl_pq = (p * (torch.log(p + eps) - torch.log(q + eps))).sum(dim=-1)
+    kl_qp = (q * (torch.log(q + eps) - torch.log(p + eps))).sum(dim=-1)
+
+    return (kl_pq + kl_qp).mean()
+
+
+def kl_hidden_regularization(h1, h2, eps=1e-8):
+    """
+    KL divergence between two hidden sequences.
+    h1, h2: (B, Nc, D)
+    """
+
+    # Convert to distributions along feature dimension
+    p = torch.softmax(h1, dim=-1)
+    q = torch.softmax(h2, dim=-1)
+
+    kl = p * (torch.log(p + eps) - torch.log(q + eps))
+    kl = kl.sum(dim=-1)          # sum over feature dim
+    return kl.mean()             # mean over batch and tokens
+
+
 def train(
         priordataloader_class,
         criterion,
@@ -45,6 +74,7 @@ def train(
         train_mixed_precision=False, 
         evaluation_class: EvalHelper=None, 
         use_cross_attention: bool = False,
+        perm_reg_lam: float = None,         # Permutation Regularization weighting.
         config={},
         **model_extra_args
 ):
@@ -87,6 +117,7 @@ def train(
     model.criterion = criterion
 
     print(f"Numer of Parameter in model {sum(p.numel() for p in model.parameters())/1000/1000:.{2}f} M parameters")
+    print(f"Using permutation regularization with lambda {perm_reg_lam} <-- If none, no regularization.")
 
     model.to(device)
     dl.model = model    # Model attatched to dataloader as well.
@@ -99,12 +130,16 @@ def train(
     #                  Definition of the training for one epoch
     #-----------------------------------------------------------------------------
 
-    def train_epoch():
+    def train_epoch(perm_reg_lam: float = None):
         model.train()
         total_loss = 0.
+        reg_losses = 0.
         total_positional_losses = 0.
         total_positional_losses_recorded = 0
         nan_steps = 0
+
+        # Check if permutation regularization needs to be applied.
+        do_compute_perm_reg = perm_reg_lam is not None and perm_reg_lam != 0.0
 
         for batch, (data, targets, single_eval_pos) in enumerate(dl):
             cm = nullcontext()
@@ -115,25 +150,27 @@ def train(
                     continue
 
                 with autocast("cuda", enabled=scaler is not None):
-                    output = model(
-                        tuple(
-                            e.to(device) if torch.is_tensor(e) else e 
-                            for e in data
-                            ) 
-                            if isinstance(data, tuple)
-
-                        else data.to(device), 
-                        single_eval_pos=single_eval_pos
+                    output, h1, h2 = model(
+                        tuple(e.to(device) if torch.is_tensor(e) else e for e in data),
+                        single_eval_pos=single_eval_pos,
+                        compute_perm_reg=do_compute_perm_reg
                     )
 
                     if single_eval_pos is not None:
                         targets = targets[single_eval_pos:]
 
-                    # Because we use the CrossEntropyLoss here. If this changes, you also need to change this one here.
                     losses = criterion(output.reshape(-1, n_out), targets.to(device).long().flatten())
                     losses = losses.view(*output.shape[0:2])
                     loss, nan_share = utils.torch_nanmean(losses.mean(0), return_nanshare=True)
-                    loss = loss / aggregate_k_gradients
+
+                    # ---------- KL permutation regularization ----------
+                    reg_loss = symmetric_kl_hidden(h1, h2)
+                    reg_losses += reg_loss
+
+                    if not perm_reg_lam:
+                        perm_reg_lam = 0.0   
+
+                    loss = (loss + perm_reg_lam * reg_loss) / aggregate_k_gradients
 
                 if scaler: 
                     loss = scaler.scale(loss)
@@ -163,7 +200,7 @@ def train(
                         nn.functional.one_hot(torch.tensor(single_eval_pos), bptt)
                 nan_steps += nan_share
 
-        return total_loss / (steps_per_epoch), total_positional_losses, nan_steps.cpu().item()/(batch+1)
+        return total_loss / (steps_per_epoch), total_positional_losses, nan_steps.cpu().item()/(batch+1), (reg_losses / len(dl))
     
 
     #-----------------------------------------------------------------------------
@@ -178,7 +215,7 @@ def train(
         for epoch in (range(1, epochs + 1)):
 
             epoch_start_time = time.time()
-            total_loss, total_positional_losses, nan_share = train_epoch()
+            total_loss, total_positional_losses, nan_share, hidden_kl = train_epoch(perm_reg_lam)
 
             print('-' * 89)
             print(
@@ -191,7 +228,7 @@ def train(
             wandb_dict = {}
             wandb_dict[f"train/loss"] = total_loss
             wandb_dict["extras/nan_share"] = nan_share
-            
+            wandb_dict["extras/hidden_kl"] = hidden_kl
 
             # Do other evaluations as well.
             if evaluation_class:
