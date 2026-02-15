@@ -153,7 +153,7 @@ def train(
                     output, h1, h2 = model(
                         tuple(e.to(device) if torch.is_tensor(e) else e for e in data),
                         single_eval_pos=single_eval_pos,
-                        compute_perm_reg=do_compute_perm_reg
+                        compute_perm_reg=True
                     )
 
                     if single_eval_pos is not None:
