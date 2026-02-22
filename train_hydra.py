@@ -57,7 +57,7 @@ eval_class = EvalHelper()
 
 config['batch_size'] = 32 
 config['emsize'] = 128 
-config["epochs"] = 50
+config["epochs"] = 5
 config["bptt"] = 128
 config["max_eval_pos"] = 100       
 
@@ -77,17 +77,16 @@ device = "cuda:0"
 #                                           MODEL
 #------------------------------------------------------------------------------------------------
 
-model = train_model(
+model, optimizer = train_model(
     config=config,
     evaluation_class=eval_class
 )
 
 save_model(
     model = model,
-    path = ".",
-    filename = "hydrapfn/trained_models/test_model.cpkt",
+    optimizer=optimizer,
+    path = "hydrapfn/trained_models/test_model.cpkt",
     config_sample = config
-
 )
 
 

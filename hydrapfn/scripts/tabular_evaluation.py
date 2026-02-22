@@ -125,7 +125,6 @@ def evaluate(
 
     for [ds_name, X, y, categorical_feats, _, _] in datasets:
         dataset_bptt = min(len(X), bptt)
-        print(f"Currently at dataset {ds_name}")
 
         aggregated_metric, num = torch.tensor(0.0), 0
         ds_result = {}

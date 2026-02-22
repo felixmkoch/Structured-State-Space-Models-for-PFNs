@@ -2,9 +2,9 @@ import os
 import torch
 
 def save_model(
-        model, 
-        path, 
-        filename, 
+        model,
+        optimizer, 
+        path,
         config_sample
         ):
     
@@ -27,4 +27,8 @@ def save_model(
 
     config_sample = make_serializable(config_sample)
 
-    torch.save((model.state_dict(), None, config_sample), os.path.join(path, filename))
+    torch.save({
+        "model_state_dict": model.state_dict(),
+        "optimizer": optimizer.state_dict(),
+        "config": config_sample,
+    }, path)

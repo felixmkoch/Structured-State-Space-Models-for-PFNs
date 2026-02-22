@@ -126,6 +126,9 @@ def train(
     scheduler = scheduler(optimizer, warmup_epochs, epochs)
     scaler = GradScaler("cuda") if train_mixed_precision else None
 
+    if epochs == 0:
+        return model.to('cpu'), optimizer
+
     #-----------------------------------------------------------------------------
     #                  Definition of the training for one epoch
     #-----------------------------------------------------------------------------
@@ -248,4 +251,4 @@ def train(
     except KeyboardInterrupt:
         pass
 
-    return total_loss, total_positional_losses, model.to('cpu'), dl
+    return total_loss, total_positional_losses, model.to('cpu'), optimizer, dl

@@ -147,13 +147,10 @@ class EvalHelper:
                              eval_positions, 
                              metric, 
                              device, 
-                             method_name, 
                              evaluation_type, 
                              max_classes=10, 
                              max_features=100, 
-                             max_time=300, 
                              split_numbers=[1],
-                             jrt_prompt=False,
                              single_evaluation_prompt=False,
                              permutation_random=False,
                              permutation_bagging=1,
@@ -177,6 +174,8 @@ class EvalHelper:
 
         result = {}
 
+        print(f"BPTT BEFORE: {bptt}")
+
         # The dataset to iterate over
         ds = None
         if evaluation_type != "dummy":
@@ -192,9 +191,9 @@ class EvalHelper:
                 result[did] = []
                 for split_number in split_numbers:
                     if return_whole_output:
-                        result[did].append(evaluate(self.limit_dict[did], bptt, eval_positions, metric, model, device, method_name=method_name, max_time=max_time, split_number=split_number, jrt_prompt=jrt_prompt, random_premutation=permutation_random, single_evaluation_prompt=single_evaluation_prompt, permutation_bagging=permutation_bagging, sample_bagging=sample_bagging))
+                        result[did].append(evaluate(self.limit_dict[did], bptt, eval_positions, metric, model, device, split_number=split_number, random_premutation=permutation_random, single_evaluation_prompt=single_evaluation_prompt))
                     else:
-                        result[did].append(evaluate(self.limit_dict[did], bptt, eval_positions, metric, model, device, method_name=method_name, max_time=max_time, split_number=split_number, jrt_prompt=jrt_prompt, random_premutation=permutation_random, single_evaluation_prompt=single_evaluation_prompt, permutation_bagging=permutation_bagging, sample_bagging=sample_bagging)["mean_metric"].item())
+                        result[did].append(evaluate(self.limit_dict[did], bptt, eval_positions, metric, model, device, split_number=split_number, random_premutation=permutation_random, single_evaluation_prompt=single_evaluation_prompt)["mean_metric"].item())
 
         else:       # Here dummy evaluation.
 
@@ -202,7 +201,7 @@ class EvalHelper:
 
             result["dummy"] = []
 
-            result["dummy"].append(evaluate(dummy_dataset, bptt, eval_positions, metric, model, device, method_name=method_name, max_time=max_time, split_number=1, jrt_prompt=jrt_prompt, random_premutation=False, single_evaluation_prompt=single_evaluation_prompt, permutation_bagging=permutation_bagging, sample_bagging=sample_bagging))
+            result["dummy"].append(evaluate(dummy_dataset, bptt, eval_positions, metric, model, device, split_number=1, random_premutation=False, single_evaluation_prompt=single_evaluation_prompt))
 
         return result
 
