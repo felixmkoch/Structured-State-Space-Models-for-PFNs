@@ -133,7 +133,7 @@ def train_model(
         **extra_kwargs
     }
 
-    model, optimizer = train(
+    _, _, model, optimizer, _ = train(
         priordataloader_class = model_proto.DataLoader,
         criterion = loss,
         encoder_generator = encoder,
