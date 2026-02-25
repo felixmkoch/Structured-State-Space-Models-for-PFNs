@@ -127,7 +127,7 @@ def train(
     scaler = GradScaler("cuda") if train_mixed_precision else None
 
     if epochs == 0:
-        return model.to('cpu'), optimizer
+        return None, None, model.to('cpu'), optimizer, None
 
     #-----------------------------------------------------------------------------
     #                  Definition of the training for one epoch
